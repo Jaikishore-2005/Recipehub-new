@@ -49,12 +49,14 @@ const Signup = () => {
       }
       
       if (response.data && response.data.token) {
-        // Store token and user data
-        localStorage.setItem("recipehub_token", response.data.token);
-        localStorage.setItem("recipehub_user", JSON.stringify(response.data.user));
+        // Don't store token and user data, just show success message and redirect to login
+        setError("");
         
-        // Refresh auth context
-        window.location.href = "/";
+        // Show success message using alert or toast
+        alert("Account created successfully! Please log in with your credentials.");
+        
+        // Redirect to login page instead of home
+        navigate("/login");
       } else {
         setError("Registration successful but failed to get authentication data");
       }
