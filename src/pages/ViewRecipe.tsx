@@ -133,6 +133,9 @@ const ViewRecipe = () => {
   // Only owners can invite collaborators
   const canInvite = isOwner;
 
+  // Get the ID for navigation (prefer MongoDB _id if available)
+  const recipeNavId = (safeRecipe as any)._id || safeRecipe.id;
+
   // Helper function to safely format date
   const formatDate = (dateString: string) => {
     try {
@@ -205,7 +208,7 @@ const ViewRecipe = () => {
               {/* Edit button - only for owner or collaborators */}
               {canEdit && (
                 <Link 
-                  to={`/recipes/${safeRecipe.id}/edit`}
+                  to={`/recipes/${recipeNavId}/edit`}
                   className="btn-recipe-primary flex items-center gap-1"
                 >
                   <Edit size={16} />
@@ -216,7 +219,7 @@ const ViewRecipe = () => {
               {/* Share button - only for owners */}
               {canInvite && (
                 <Link 
-                  to={`/recipes/${safeRecipe.id}/share`}
+                  to={`/recipes/${recipeNavId}/share`}
                   className="btn-recipe-secondary flex items-center gap-1"
                 >
                   <Share size={16} />
@@ -377,7 +380,7 @@ const ViewRecipe = () => {
                   </div>
                   {canInvite && (
                     <Link 
-                      to={`/recipes/${safeRecipe.id}/share`}
+                      to={`/recipes/${recipeNavId}/share`}
                       className="text-sm text-primary hover:underline"
                     >
                       Invite

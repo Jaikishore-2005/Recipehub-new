@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useRecipes } from "../contexts/RecipeContext";
@@ -27,18 +26,38 @@ const ShareRecipe = () => {
   // Fetch recipe data
   useEffect(() => {
     if (recipeId) {
-      const fetchedRecipe = getRecipeById(recipeId);
+      // First try to find by standard id
+      let fetchedRecipe = getRecipeById(recipeId);
+      
+      // If not found, try to find by MongoDB _id
+      if (!fetchedRecipe) {
+        console.log("Trying to find recipe by _id...");
+        const allRecipes = useRecipes().recipes;
+        fetchedRecipe = allRecipes.find(r => (r as any)._id === recipeId);
+        
+        if (fetchedRecipe) {
+          console.log("Found recipe by _id:", fetchedRecipe);
+        }
+      }
       
       if (fetchedRecipe) {
-        setRecipe(fetchedRecipe);
+        // Ensure recipe has a consistent id
+        const completeRecipe = {
+          ...fetchedRecipe,
+          id: fetchedRecipe.id || (fetchedRecipe as any)._id,
+          _id: (fetchedRecipe as any)._id || fetchedRecipe.id
+        };
+        
+        setRecipe(completeRecipe);
         
         // Check if user has permission to invite collaborators
-        if (!hasPermission(fetchedRecipe, "invite_collaborators")) {
+        if (!hasPermission(completeRecipe, "invite_collaborators")) {
           // Redirect to recipe view
           navigate(`/recipes/${recipeId}`);
         }
       } else {
         // Recipe not found, redirect to home
+        console.error("Recipe not found for sharing:", recipeId);
         navigate("/");
       }
     }
@@ -53,17 +72,22 @@ const ShareRecipe = () => {
     }, 2000);
   };
   
-  const handleAddCollaborator = (collaborator: any) => {
+  const handleAddCollaborator = async (collaborator: any) => {
     if (recipe) {
-      addCollaborator(recipe.id, collaborator);
+      return await addCollaborator(recipe.id, collaborator);
     }
+    return Promise.resolve();
   };
   
-  const handleRemoveCollaborator = (collaboratorId: string) => {
+  const handleRemoveCollaborator = async (collaboratorId: string) => {
     if (recipe) {
-      removeCollaborator(recipe.id, collaboratorId);
+      return await removeCollaborator(recipe.id, collaboratorId);
     }
+    return Promise.resolve();
   };
+  
+  // Get the ID for navigation (prefer MongoDB _id if available)
+  const recipeNavId = recipe ? ((recipe as any)._id || recipe.id) : recipeId;
   
   if (!recipe) {
     return (
@@ -77,7 +101,7 @@ const ShareRecipe = () => {
     <div>
       <div className="flex items-center justify-between mb-6">
         <Link
-          to={`/recipes/${recipe.id}`}
+          to={`/recipes/${recipeNavId}`}
           className="flex items-center text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft size={16} className="mr-1" />
@@ -124,7 +148,7 @@ const ShareRecipe = () => {
                 Public recipes can be viewed by anyone, even if they don't have an account.
               </p>
               <Link
-                to={`/recipes/${recipe.id}/edit`}
+                to={`/recipes/${recipeNavId}/edit`}
                 className="btn-recipe-secondary text-center block"
               >
                 Edit Privacy Settings
