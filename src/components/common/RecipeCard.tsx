@@ -92,13 +92,18 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
     setShowDropdown(!showDropdown);
   };
 
+  // Handle card click to navigate to recipe detail
+  const handleCardClick = () => {
+    navigate(`/recipes/${safeRecipe.id}`);
+  };
+
   return (
-    <Link 
-      to={`/recipes/${safeRecipe.id}`} 
-      className="block group"
+    <div 
+      className="block group cursor-pointer"
       data-testid={`recipe-card-${safeRecipe.id}`}
+      onClick={handleCardClick}
     >
-      <div className="recipe-card group cursor-pointer hover:shadow-lg transition-shadow p-4 rounded-md bg-white border border-gray-200">
+      <div className="recipe-card group hover:shadow-lg transition-shadow p-4 rounded-md bg-white border border-gray-200">
         {/* Header: Title and Collaborators */}
         <div className="flex justify-between items-start mb-2">
           <h3 className="text-lg font-semibold text-gray-800">{safeRecipe.title}</h3>
@@ -177,31 +182,39 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
             onClick={(e) => e.stopPropagation()}
           >
             {showActions && canEdit && (
-              <Link
-                to={`/recipes/${safeRecipe.id}/edit`}
+              <button
                 className="p-2 rounded hover:bg-gray-100 transition"
                 title="Edit recipe"
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/recipes/${safeRecipe.id}/edit`);
+                }}
               >
                 <Edit size={16} />
-              </Link>
+              </button>
             )}
             {showActions && canInvite && (
-              <Link
-                to={`/recipes/${safeRecipe.id}/share`}
+              <button
                 className="p-2 rounded hover:bg-gray-100 transition"
                 title="Share recipe"
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/recipes/${safeRecipe.id}/share`);
+                }}
               >
                 <Share size={16} />
-              </Link>
+              </button>
             )}
             {showActions && isOwner && (
               <div className="relative">
                 <button
                   className="p-2 rounded hover:bg-gray-100 transition"
                   title="More options"
-                  onClick={toggleDropdown}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setShowDropdown(!showDropdown);
+                  }}
                 >
                   <MoreVertical size={16} />
                 </button>
@@ -222,6 +235,6 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
           </div>
         </div>
       </div>
-    </Link>
+    </div>
   );
 };
