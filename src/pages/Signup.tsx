@@ -4,7 +4,6 @@ import { useAuth } from "../contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { UserPlus } from "lucide-react";
 import api from "../services/api";
-import TestApiConnection from "../components/TestApiConnection";
 
 const Signup = () => {
   const [name, setName] = useState("");
@@ -192,8 +191,6 @@ const Signup = () => {
               </Link>
             </p>
           </div>
-          
-          <TestApiConnection />
         </div>
       </div>
     </div>
