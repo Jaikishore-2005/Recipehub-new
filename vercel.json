@@ -1,18 +1,25 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
-  ],
-  "headers": [
+  "version": 2,
+  "public": true,
+  "cleanUrls": true,
+  "github": {
+    "enabled": true,
+    "silent": true
+  },
+  "builds": [
     {
-      "source": "/assets/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
-      ]
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist",
+        "skipCache": true,
+        "zeroConfig": true,
+        "buildCommand": "echo 'Removing TestApiConnection reference'; sed -i '/TestApiConnection/d' ./src/App.tsx && npm run build"
+      }
     }
+  ],
+  "routes": [
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/index.html" }
   ]
 } 
