@@ -54,7 +54,12 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
     }));
   }, [initialRecipe]);
 
-  const [newIngredient, setNewIngredient] = useState({ name: "", quantity: 0, unit: "" });
+  // Using string for quantity in the form input, will convert to number when adding
+  const [newIngredient, setNewIngredient] = useState<{name: string; quantity: string; unit: string}>({ 
+    name: "", 
+    quantity: "", 
+    unit: "" 
+  });
   const [newStep, setNewStep] = useState({ description: "", timerMinutes: undefined });
   const [newTag, setNewTag] = useState("");
   const [showCustomTagInput, setShowCustomTagInput] = useState(false);
@@ -87,10 +92,14 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
       ...recipe,
       ingredients: [
         ...(recipe.ingredients || []),
-        { ...newIngredient, id: `ing-${Date.now()}` }
+        { 
+          ...newIngredient, 
+          id: `ing-${Date.now()}`,
+          quantity: parseFloat(newIngredient.quantity as string) || 0 
+        }
       ]
     });
-    setNewIngredient({ name: "", quantity: 0, unit: "" });
+    setNewIngredient({ name: "", quantity: "", unit: "" });
   };
 
   const handleRemoveIngredient = (id: string) => {
@@ -287,8 +296,9 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
               type="number"
               placeholder="Amount"
               value={newIngredient.quantity || ""}
-              onChange={(e) => setNewIngredient({ ...newIngredient, quantity: Number(e.target.value) })}
+              onChange={(e) => setNewIngredient({ ...newIngredient, quantity: e.target.value })}
               min="0"
+              step="0.01"
             />
             <div className="flex gap-3">
               <Input
