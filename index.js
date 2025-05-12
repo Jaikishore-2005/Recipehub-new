@@ -39,7 +39,16 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
 const corsOptions = {
   origin: '*', // Allow all origins for debugging
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Access-Control-Allow-Origin'],
+  allowedHeaders: [
+    'Content-Type', 
+    'Authorization', 
+    'Access-Control-Allow-Origin',
+    'Accept',
+    'X-Requested-With',
+    'Cache-Control',
+    'X-Auth-Token',
+    'Origin'
+  ],
   exposedHeaders: ['Access-Control-Allow-Origin'],
   credentials: false
 };
