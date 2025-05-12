@@ -93,7 +93,11 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
   };
 
   return (
-    <Link to={`/recipes/${safeRecipe.id}`} className="block group">
+    <Link 
+      to={`/recipes/${safeRecipe.id}`} 
+      className="block group"
+      data-testid={`recipe-card-${safeRecipe.id}`}
+    >
       <div className="recipe-card group cursor-pointer hover:shadow-lg transition-shadow p-4 rounded-md bg-white border border-gray-200">
         {/* Header: Title and Collaborators */}
         <div className="flex justify-between items-start mb-2">

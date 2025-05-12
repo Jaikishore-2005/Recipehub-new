@@ -106,13 +106,17 @@ const ViewRecipe = () => {
   };
   
   // Permission logic
-  const canEdit =
-    safeRecipe &&
-    currentUser &&
-    (hasPermission(safeRecipe, "edit_own") || hasPermission(safeRecipe, "edit_if_invited"));
-  
-  const canInvite = safeRecipe && hasPermission(safeRecipe, "invite_collaborators");
   const isOwner = safeRecipe && currentUser && safeRecipe.owner && safeRecipe.owner.id === currentUser.id;
+  
+  // Check if user is a collaborator (someone with edit permissions)
+  const isCollaborator = safeRecipe && currentUser && Array.isArray(safeRecipe.collaborators) && 
+    safeRecipe.collaborators.some(collab => collab.id === currentUser.id);
+  
+  // User can edit if they are the owner or a collaborator
+  const canEdit = isOwner || isCollaborator;
+  
+  // Only owners can invite collaborators
+  const canInvite = isOwner;
 
   // Helper function to safely format date
   const formatDate = (dateString: string) => {
@@ -183,6 +187,7 @@ const ViewRecipe = () => {
             </div>
             
             <div className="flex flex-wrap gap-2 mt-4 md:mt-0">
+              {/* Edit button - only for owner or collaborators */}
               {canEdit && (
                 <Link 
                   to={`/recipes/${safeRecipe.id}/edit`}
@@ -193,6 +198,7 @@ const ViewRecipe = () => {
                 </Link>
               )}
               
+              {/* Share button - only for owners */}
               {canInvite && (
                 <Link 
                   to={`/recipes/${safeRecipe.id}/share`}
@@ -203,6 +209,7 @@ const ViewRecipe = () => {
                 </Link>
               )}
               
+              {/* Cook Mode button - always visible to everyone */}
               <button 
                 onClick={() => setCookModeActive(true)}
                 className="btn-recipe-primary flex items-center gap-1"
@@ -211,6 +218,7 @@ const ViewRecipe = () => {
                 Cook Mode
               </button>
 
+              {/* More options menu - only for owners */}
               {isOwner && (
                 <div className="relative">
                   <button
@@ -375,7 +383,7 @@ const ViewRecipe = () => {
                       </div>
                     </div>
                     <span className="text-xs bg-recipe-mint px-2 py-1 rounded">
-                      Owner
+                      {isOwner ? "You (Owner)" : "Owner"}
                     </span>
                   </div>
                   
@@ -400,7 +408,9 @@ const ViewRecipe = () => {
                         </div>
                       </div>
                       <span className="text-xs bg-recipe-mint px-2 py-1 rounded">
-                        {collaborator.role === "owner" ? "Co-owner" : "Editor"}
+                        {currentUser && collaborator.id === currentUser.id 
+                          ? "You (Collaborator)" 
+                          : collaborator.role === "owner" ? "Co-owner" : "Collaborator"}
                       </span>
                     </div>
                   ))}
