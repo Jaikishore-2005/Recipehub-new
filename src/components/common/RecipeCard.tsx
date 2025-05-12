@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useRecipes } from "../../contexts/RecipeContext";
 import { Recipe } from "../../types";
-import { Edit, Share, Clock, MoreVertical, Trash2 } from "lucide-react";
+import { Edit, Share, Clock, MoreVertical, Trash2, Users, UserMinus } from "lucide-react";
 
 interface RecipeCardProps {
   recipe: Recipe;
@@ -109,6 +109,15 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
     setShowDropdown(false);
   };
 
+  const handleManageCollaboratorsClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const recipeId = safeRecipe._id || safeRecipe.id;
+    navigate(`/recipes/${recipeId}/share`);
+    setShowDropdown(false);
+  };
+
   const toggleDropdown = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -177,6 +186,15 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
             </>
           )}
           <span>{safeRecipe.servings} servings</span>
+          {safeRecipe.collaborators.length > 0 && (
+            <>
+              <span>•</span>
+              <span className="flex items-center gap-1">
+                <Users size={14} className="text-blue-500" />
+                {safeRecipe.collaborators.length} {safeRecipe.collaborators.length === 1 ? 'collaborator' : 'collaborators'}
+              </span>
+            </>
+          )}
         </div>
 
         {/* Tags */}
@@ -248,14 +266,25 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
                 </button>
                 
                 {showDropdown && (
-                  <div className="absolute right-0 bottom-full mb-1 bg-white shadow-lg rounded-md border border-gray-200 py-1 z-10 w-32">
-                    <button
-                      className="w-full px-3 py-2 text-sm text-left text-red-600 hover:bg-gray-100 flex items-center gap-2"
-                      onClick={handleDeleteClick}
-                    >
-                      <Trash2 size={14} />
-                      Delete
-                    </button>
+                  <div className="absolute right-0 bottom-full mb-1 bg-white shadow-lg rounded-md border border-gray-200 py-1 z-10 w-48">
+                    {isOwner && (
+                      <button
+                        className="w-full px-3 py-2 text-sm text-left text-blue-600 hover:bg-gray-100 flex items-center gap-2"
+                        onClick={handleManageCollaboratorsClick}
+                      >
+                        <Users size={14} />
+                        Manage Collaborators
+                      </button>
+                    )}
+                    {isOwner && (
+                      <button
+                        className="w-full px-3 py-2 text-sm text-left text-red-600 hover:bg-gray-100 flex items-center gap-2"
+                        onClick={handleDeleteClick}
+                      >
+                        <Trash2 size={14} />
+                        Delete
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
