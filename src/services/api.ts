@@ -146,8 +146,12 @@ const api = {
       fetchApi(`/api/collaborators/invitations/${invitationId}/reject`, 'PUT'),
     
     // Remove a collaborator
-    remove: (recipeId: string, collaboratorId: string) => 
-      fetchApi(`/api/collaborators/recipes/${recipeId}/collaborators/${collaboratorId}`, 'DELETE'),
+    remove: (recipeId: string, collaboratorId: string) => {
+      console.log(`Making DELETE request to remove collaborator ${collaboratorId} from recipe ${recipeId}`);
+      return fetchApi(`/api/collaborators/recipes/${recipeId}/collaborators/${collaboratorId}`, 'DELETE', null, {
+        'Cache-Control': 'no-store',
+      });
+    },
   }
 };
 

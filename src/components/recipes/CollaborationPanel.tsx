@@ -71,14 +71,29 @@ export const CollaborationPanel: React.FC<CollaborationPanelProps> = ({
     }
   };
   
-  const handleRemoveCollaborator = async (collaboratorId: string) => {
+  const handleRemoveCollaborator = async (collaboratorId: string, collaboratorName: string) => {
     try {
       setSubmitting(true);
+      setError(null);
+      
+      console.log(`Removing collaborator ${collaboratorName} with ID ${collaboratorId}`);
+      console.log("From recipe:", recipe.id, recipe.title);
+      
+      // Verify that collaborator exists
+      const collaborator = recipe.collaborators.find(c => c.id === collaboratorId);
+      if (!collaborator) {
+        throw new Error("Collaborator not found");
+      }
+      
       await onRemoveCollaborator(collaboratorId);
-      setSuccess("Collaborator removed successfully");
+      setSuccess(`Successfully removed ${collaboratorName} as a collaborator`);
+      
+      // Clear any previous errors
+      setError(null);
     } catch (err) {
       console.error("Error removing collaborator:", err);
-      setError("Failed to remove collaborator");
+      setError(err instanceof Error ? err.message : "Failed to remove collaborator");
+      setSuccess(null);
     } finally {
       setSubmitting(false);
     }
@@ -135,11 +150,12 @@ export const CollaborationPanel: React.FC<CollaborationPanelProps> = ({
                 </div>
                 <div className="flex items-center gap-2">
                   <button 
-                    onClick={() => handleRemoveCollaborator(collaborator.id)}
+                    onClick={() => handleRemoveCollaborator(collaborator.id, collaborator.name)}
                     className="p-1 hover:bg-muted-foreground/10 rounded"
                     disabled={submitting}
+                    title="Remove collaborator"
                   >
-                    <X size={16} className="text-muted-foreground" />
+                    <X size={16} className={submitting ? "text-muted-foreground/50" : "text-muted-foreground hover:text-red-500"} />
                   </button>
                 </div>
               </div>

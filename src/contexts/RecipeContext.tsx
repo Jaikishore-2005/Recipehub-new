@@ -354,14 +354,31 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   
   const removeCollaborator = async (recipeId: string, collaboratorId: string) => {
     try {
-      // Use the new collaborator API endpoint
-      const response = await api.collaborators.remove(recipeId, collaboratorId);
+      console.log(`Attempting to remove collaborator: Recipe ID ${recipeId}, Collaborator ID ${collaboratorId}`);
+      
+      // Find the recipe to make sure we're using the correct IDs
+      const recipe = getRecipeById(recipeId);
+      if (!recipe) {
+        console.error(`Recipe with ID ${recipeId} not found`);
+        throw new Error("Recipe not found");
+      }
+      
+      // Log the collaborator we're trying to remove
+      const collaborator = recipe.collaborators.find(c => c.id === collaboratorId);
+      console.log("Collaborator to remove:", collaborator);
+      
+      // Use MongoDB _id for the recipe if available
+      const mongoRecipeId = (recipe as any)._id || recipe.id;
+      
+      // Use the collaborator API endpoint
+      const response = await api.collaborators.remove(mongoRecipeId, collaboratorId);
+      console.log("Collaborator removal API response:", response);
       
       if (response.data) {
         console.log("Collaborator removed:", response.data);
         
         // After successful removal, refresh the recipe list
-        fetchAllRecipes();
+        await fetchAllRecipes();
         
         return response.data;
       } else if (response.error) {
