@@ -1,7 +1,6 @@
 {
   "version": 2,
   "public": true,
-  "cleanUrls": true,
   "github": {
     "enabled": true,
     "silent": true
