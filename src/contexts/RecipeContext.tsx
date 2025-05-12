@@ -252,21 +252,33 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       
       // Check if current user is the owner
       if (currentUser && recipeToDelete.owner.id !== currentUser.id) {
-        console.warn("Warning: Attempting to delete a recipe where current user may not be the owner");
+        console.error("Error: Only the recipe owner can delete this recipe");
+        throw new Error("Only the recipe owner can delete this recipe");
       }
       
-      const response = await api.recipes.delete(id);
+      // Convert MongoDB ObjectId to string if needed to ensure consistent comparison
+      const recipeId = (recipeToDelete as any)._id || recipeToDelete.id;
+      console.log(`Using ID for deletion: ${recipeId}`);
+      
+      // Make the API call to delete
+      const response = await api.recipes.delete(recipeId);
       console.log("Delete API response:", response);
       
       if (response.error) {
         console.error("API error when deleting recipe:", response.error, response.message);
-        throw new Error(response.error);
+        if (response.error === "Forbidden") {
+          throw new Error("You do not have permission to delete this recipe. Only the owner can delete recipes.");
+        } else {
+          throw new Error(response.error);
+        }
       }
       
       // If API call successful, update local state
       setRecipes(prev => {
         if (!Array.isArray(prev)) return [];
-        return prev.filter(recipe => recipe.id !== id);
+        return prev.filter(recipe => {
+          return recipe.id !== id && (recipe as any)._id !== id;
+        });
       });
     } catch (error) {
       console.error("Error deleting recipe:", error);

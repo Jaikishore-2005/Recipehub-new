@@ -108,7 +108,12 @@ const api = {
     update: (id: string, recipeData: any) => 
       fetchApi(`/api/recipes/${id}`, 'PUT', recipeData),
     
-    delete: (id: string) => fetchApi(`/api/recipes/${id}`, 'DELETE'),
+    delete: (id: string) => {
+      console.log(`Making DELETE request to /api/recipes/${id}`);
+      return fetchApi(`/api/recipes/${id}`, 'DELETE', null, {
+        'Cache-Control': 'no-cache',
+      });
+    },
     
     getPublic: () => fetchApi('/api/recipes/public'),
   },
