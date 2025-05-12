@@ -202,10 +202,6 @@ app.listen(PORT, async () => {
     Auth Endpoints:
     - POST http://localhost:${PORT}/api/auth/signup
     - POST http://localhost:${PORT}/api/auth/login
-    
-    Test users:
-    - admin@example.com (password: password123)
-    - user@example.com (password: password123)
     ===============================================
     `);
   }
