@@ -38,20 +38,29 @@ const ViewRecipe = () => {
     );
   }
   
+  // Ensure recipe has valid arrays
+  const safeRecipe = {
+    ...recipe,
+    ingredients: Array.isArray(recipe.ingredients) ? recipe.ingredients : [],
+    steps: Array.isArray(recipe.steps) ? recipe.steps : [],
+    tags: Array.isArray(recipe.tags) ? recipe.tags : [],
+    collaborators: Array.isArray(recipe.collaborators) ? recipe.collaborators : []
+  };
+  
   // Permission logic
   const canEdit =
-    recipe &&
+    safeRecipe &&
     currentUser &&
-    (hasPermission(recipe, "edit_own") || hasPermission(recipe, "edit_if_invited"));
+    (hasPermission(safeRecipe, "edit_own") || hasPermission(safeRecipe, "edit_if_invited"));
   
-  const canInvite = recipe && hasPermission(recipe, "invite_collaborators");
-  const isOwner = recipe && currentUser && recipe.owner.id === currentUser.id;
+  const canInvite = safeRecipe && hasPermission(safeRecipe, "invite_collaborators");
+  const isOwner = safeRecipe && currentUser && safeRecipe.owner.id === currentUser.id;
 
   // Handle delete recipe
   const handleDeleteRecipe = async () => {
     if (window.confirm("Are you sure you want to delete this recipe? This action cannot be undone.")) {
       try {
-        await deleteRecipe(recipe.id);
+        await deleteRecipe(safeRecipe.id);
         navigate("/my-recipes");
       } catch (error) {
         console.error("Error deleting recipe:", error);
@@ -63,7 +72,7 @@ const ViewRecipe = () => {
   };
   
   // Calculate scaled ingredients based on servings multiplier
-  const scaledIngredients = recipe.ingredients.map((ing) => ({
+  const scaledIngredients = safeRecipe.ingredients.map((ing) => ({
     ...ing,
     quantity: ing.quantity * servingsMultiplier,
   }));
@@ -71,7 +80,7 @@ const ViewRecipe = () => {
   return (
     <>
       {cookModeActive ? (
-        <CookMode recipe={recipe} onClose={() => setCookModeActive(false)} />
+        <CookMode recipe={safeRecipe} onClose={() => setCookModeActive(false)} />
       ) : (
         <div>
           <button 
@@ -85,14 +94,14 @@ const ViewRecipe = () => {
           {/* Header section */}
           <div className="flex flex-col md:flex-row justify-between md:items-center mb-6">
             <div>
-              <h1 className="text-3xl font-bold mb-2">{recipe.title}</h1>
-              <p className="text-muted-foreground">{recipe.description}</p>
+              <h1 className="text-3xl font-bold mb-2">{safeRecipe.title}</h1>
+              <p className="text-muted-foreground">{safeRecipe.description}</p>
             </div>
             
             <div className="flex flex-wrap gap-2 mt-4 md:mt-0">
               {canEdit && (
                 <Link 
-                  to={`/recipes/${recipe.id}/edit`}
+                  to={`/recipes/${safeRecipe.id}/edit`}
                   className="btn-recipe-primary flex items-center gap-1"
                 >
                   <Edit size={16} />
@@ -102,7 +111,7 @@ const ViewRecipe = () => {
               
               {canInvite && (
                 <Link 
-                  to={`/recipes/${recipe.id}/share`}
+                  to={`/recipes/${safeRecipe.id}/share`}
                   className="btn-recipe-secondary flex items-center gap-1"
                 >
                   <Share size={16} />
@@ -159,7 +168,7 @@ const ViewRecipe = () => {
                       >
                         -
                       </button>
-                      <span className="px-3">{recipe.servings * servingsMultiplier}</span>
+                      <span className="px-3">{safeRecipe.servings * servingsMultiplier}</span>
                       <button 
                         onClick={() => setServingsMultiplier(prev => prev + 0.25)}
                         className="px-2 py-1 hover:bg-muted/50"
@@ -170,7 +179,7 @@ const ViewRecipe = () => {
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
                     {servingsMultiplier !== 1 
-                      ? `Adjusted from ${recipe.servings} original servings`
+                      ? `Adjusted from ${safeRecipe.servings} original servings`
                       : "Original serving size"}
                   </p>
                 </div>
@@ -181,7 +190,7 @@ const ViewRecipe = () => {
                     <h3 className="font-medium">Updated</h3>
                   </div>
                   <p className="text-sm mt-1">
-                    {new Date(recipe.updatedAt).toLocaleDateString()}
+                    {new Date(safeRecipe.updatedAt).toLocaleDateString()}
                   </p>
                 </div>
                 
@@ -191,7 +200,7 @@ const ViewRecipe = () => {
                     <h3 className="font-medium">Created by</h3>
                   </div>
                   <p className="text-sm mt-1">
-                    {recipe.owner.name}
+                    {safeRecipe.owner.name}
                   </p>
                 </div>
               </div>
@@ -199,7 +208,7 @@ const ViewRecipe = () => {
               {/* Tags */}
               <div className="mb-8">
                 <div className="flex flex-wrap gap-2">
-                  {recipe.tags.map((tag) => (
+                  {safeRecipe.tags.map((tag) => (
                     <span key={tag} className="recipe-tag">
                       {tag}
                     </span>
@@ -228,7 +237,7 @@ const ViewRecipe = () => {
               <div>
                 <h2 className="text-xl font-semibold mb-4">Steps</h2>
                 <div className="space-y-5">
-                  {recipe.steps.map((step, index) => (
+                  {safeRecipe.steps.map((step, index) => (
                     <div key={step.id} className="bg-white rounded-lg shadow-sm border border-border p-4">
                       <div className="flex gap-4">
                         <div className="flex-shrink-0 h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-medium">
@@ -261,7 +270,7 @@ const ViewRecipe = () => {
                   </div>
                   {canInvite && (
                     <Link 
-                      to={`/recipes/${recipe.id}/share`}
+                      to={`/recipes/${safeRecipe.id}/share`}
                       className="text-sm text-primary hover:underline"
                     >
                       Invite
@@ -274,10 +283,10 @@ const ViewRecipe = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
-                        {recipe.owner.name.charAt(0)}
+                        {safeRecipe.owner.name.charAt(0)}
                       </div>
                       <div>
-                        <p className="font-medium">{recipe.owner.name}</p>
+                        <p className="font-medium">{safeRecipe.owner.name}</p>
                         <p className="text-xs text-muted-foreground">Original Curator</p>
                       </div>
                     </div>
@@ -287,7 +296,7 @@ const ViewRecipe = () => {
                   </div>
                   
                   {/* Collaborators */}
-                  {recipe.collaborators.map((collaborator) => (
+                  {safeRecipe.collaborators.map((collaborator) => (
                     <div key={collaborator.id} className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
@@ -312,13 +321,13 @@ const ViewRecipe = () => {
                     </div>
                   ))}
                   
-                  {recipe.collaborators.length === 0 && isOwner && (
+                  {safeRecipe.collaborators.length === 0 && isOwner && (
                     <p className="text-sm text-muted-foreground">
                       No collaborators yet. Invite others to collaborate on this recipe.
                     </p>
                   )}
                   
-                  {recipe.collaborators.length === 0 && !isOwner && (
+                  {safeRecipe.collaborators.length === 0 && !isOwner && (
                     <p className="text-sm text-muted-foreground">
                       No additional collaborators.
                     </p>

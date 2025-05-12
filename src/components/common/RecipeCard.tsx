@@ -19,11 +19,18 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
   const navigate = useNavigate();
   const [showDropdown, setShowDropdown] = useState(false);
 
-  const isOwner = currentUser?.id === recipe.owner.id;
+  // Ensure recipe has expected properties or provide defaults
+  const safeRecipe = {
+    ...recipe,
+    collaborators: Array.isArray(recipe.collaborators) ? recipe.collaborators : [],
+    tags: Array.isArray(recipe.tags) ? recipe.tags : []
+  };
+
+  const isOwner = currentUser?.id === safeRecipe.owner?.id;
   const canEdit =
-    hasPermission(recipe, "edit_own") ||
-    hasPermission(recipe, "edit_if_invited");
-  const canInvite = hasPermission(recipe, "invite_collaborators");
+    hasPermission(safeRecipe, "edit_own") ||
+    hasPermission(safeRecipe, "edit_if_invited");
+  const canInvite = hasPermission(safeRecipe, "invite_collaborators");
 
   const handleDeleteClick = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -31,7 +38,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
     
     if (window.confirm("Are you sure you want to delete this recipe? This action cannot be undone.")) {
       try {
-        await deleteRecipe(recipe.id);
+        await deleteRecipe(safeRecipe.id);
         // No need to navigate since the recipe will be removed from the list automatically
       } catch (error) {
         console.error("Error deleting recipe:", error);
@@ -49,15 +56,15 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
   };
 
   return (
-    <Link to={`/recipes/${recipe.id}`} className="block group">
+    <Link to={`/recipes/${safeRecipe.id}`} className="block group">
       <div className="recipe-card group cursor-pointer hover:shadow-lg transition-shadow p-4 rounded-md bg-white border border-gray-200">
         {/* Header: Title and Collaborators */}
         <div className="flex justify-between items-start mb-2">
-          <h3 className="text-lg font-semibold text-gray-800">{recipe.title}</h3>
+          <h3 className="text-lg font-semibold text-gray-800">{safeRecipe.title}</h3>
 
-          {recipe.collaborators.length > 0 && (
+          {safeRecipe.collaborators.length > 0 && (
             <div className="flex -space-x-2">
-              {recipe.collaborators.slice(0, 3).map((collaborator) => (
+              {safeRecipe.collaborators.slice(0, 3).map((collaborator) => (
                 <div
                   key={collaborator.id}
                   className="w-6 h-6 rounded-full bg-gray-200 border border-white flex items-center justify-center overflow-hidden text-xs"
@@ -74,9 +81,9 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
                   )}
                 </div>
               ))}
-              {recipe.collaborators.length > 3 && (
+              {safeRecipe.collaborators.length > 3 && (
                 <div className="w-6 h-6 rounded-full bg-gray-200 border border-white flex items-center justify-center text-xs">
-                  +{recipe.collaborators.length - 3}
+                  +{safeRecipe.collaborators.length - 3}
                 </div>
               )}
             </div>
@@ -84,21 +91,21 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
         </div>
 
         {/* Description */}
-        <p className="text-sm text-gray-600 mb-3">{recipe.description}</p>
+        <p className="text-sm text-gray-600 mb-3">{safeRecipe.description}</p>
 
         {/* Meta info */}
         <div className="flex items-center gap-2 mb-3 text-xs text-gray-500">
           <span className="flex items-center gap-1">
             <Clock size={14} />
-            Updated {new Date(recipe.updatedAt).toLocaleDateString()}
+            Updated {new Date(safeRecipe.updatedAt).toLocaleDateString()}
           </span>
           <span>•</span>
-          <span>{recipe.servings} servings</span>
+          <span>{safeRecipe.servings} servings</span>
         </div>
 
         {/* Tags */}
         <div className="flex flex-wrap gap-1 mb-4">
-          {recipe.tags.slice(0, 3).map((tag) => (
+          {safeRecipe.tags.slice(0, 3).map((tag) => (
             <span
               key={tag}
               className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-xs font-medium"
@@ -106,9 +113,9 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
               {tag}
             </span>
           ))}
-          {recipe.tags.length > 3 && (
+          {safeRecipe.tags.length > 3 && (
             <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-xs font-medium">
-              +{recipe.tags.length - 3}
+              +{safeRecipe.tags.length - 3}
             </span>
           )}
         </div>
@@ -116,7 +123,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
         {/* Footer: Owner and Actions */}
         <div className="flex justify-between items-center mt-auto pt-2 border-t border-gray-200">
           <span className="text-xs font-medium text-gray-700">
-            By {recipe.owner.name}
+            By {safeRecipe.owner?.name || "Unknown"}
           </span>
 
           {/* Action Buttons */}
@@ -126,7 +133,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
           >
             {showActions && canEdit && (
               <Link
-                to={`/recipes/${recipe.id}/edit`}
+                to={`/recipes/${safeRecipe.id}/edit`}
                 className="p-2 rounded hover:bg-gray-100 transition"
                 title="Edit recipe"
                 onClick={(e) => e.stopPropagation()}
@@ -136,7 +143,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
             )}
             {showActions && canInvite && (
               <Link
-                to={`/recipes/${recipe.id}/share`}
+                to={`/recipes/${safeRecipe.id}/share`}
                 className="p-2 rounded hover:bg-gray-100 transition"
                 title="Share recipe"
                 onClick={(e) => e.stopPropagation()}

@@ -60,7 +60,7 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setLoadingRecipes(true);
       const response = await api.recipes.getAll();
       if (response.data) {
-        setRecipes(response.data as Recipe[]);
+        setRecipes(Array.isArray(response.data) ? response.data as Recipe[] : []);
       }
     } catch (error) {
       console.error("Error fetching recipes:", error);
@@ -75,7 +75,7 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setLoadingRecipes(true);
       const response = await api.recipes.getPublic();
       if (response.data) {
-        setRecipes(response.data as Recipe[]);
+        setRecipes(Array.isArray(response.data) ? response.data as Recipe[] : []);
       }
     } catch (error) {
       console.error("Error fetching public recipes:", error);
@@ -85,19 +85,20 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
   
   // Get recipes created by the current user
-  const userRecipes = recipes.filter(
+  const userRecipes = Array.isArray(recipes) ? recipes.filter(
     recipe => currentUser && recipe.owner.id === currentUser.id
-  );
+  ) : [];
   
   // Get recipes shared with the current user
-  const sharedRecipes = recipes.filter(
+  const sharedRecipes = Array.isArray(recipes) ? recipes.filter(
     recipe => 
       currentUser && 
+      Array.isArray(recipe.collaborators) &&
       recipe.collaborators.some(collab => collab.id === currentUser.id)
-  );
+  ) : [];
   
   // Get all public recipes
-  const publicRecipes = recipes.filter(recipe => recipe.isPublic);
+  const publicRecipes = Array.isArray(recipes) ? recipes.filter(recipe => recipe.isPublic) : [];
   
   const createRecipe = async (recipe: Omit<Recipe, "id" | "createdAt" | "updatedAt">) => {
     if (!currentUser) return;
@@ -107,7 +108,7 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       
       if (response.data) {
         // If API call successful, update local state
-        setRecipes(prev => [...prev, response.data as Recipe]);
+        setRecipes(prev => Array.isArray(prev) ? [...prev, response.data as Recipe] : [response.data as Recipe]);
         return response.data as Recipe;
       } else if (response.error) {
         throw new Error(response.error);
@@ -124,11 +125,12 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       
       if (response.data) {
         // If API call successful, update local state
-        setRecipes(prev => 
-          prev.map(recipe => 
+        setRecipes(prev => {
+          if (!Array.isArray(prev)) return [response.data as Recipe];
+          return prev.map(recipe => 
             recipe.id === updatedRecipe.id ? response.data as Recipe : recipe
-          )
-        );
+          );
+        });
         return response.data as Recipe;
       } else if (response.error) {
         throw new Error(response.error);
@@ -145,7 +147,10 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       
       if (response.data || !response.error) {
         // If API call successful, update local state
-        setRecipes(prev => prev.filter(recipe => recipe.id !== id));
+        setRecipes(prev => {
+          if (!Array.isArray(prev)) return [];
+          return prev.filter(recipe => recipe.id !== id);
+        });
       } else if (response.error) {
         throw new Error(response.error);
       }
@@ -156,6 +161,7 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
   
   const getRecipeById = (id: string) => {
+    if (!Array.isArray(recipes)) return undefined;
     return recipes.find(recipe => recipe.id === id);
   };
   
@@ -168,14 +174,15 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       
       if (response.data) {
         // If API call successful, update local state
-        setRecipes(prev => 
-          prev.map(recipe => {
+        setRecipes(prev => {
+          if (!Array.isArray(prev)) return [response.data as Recipe];
+          return prev.map(recipe => {
             if (recipe.id === recipeId) {
               return response.data as Recipe;
             }
             return recipe;
-          })
-        );
+          });
+        });
       } else if (response.error) {
         throw new Error(response.error);
       }
@@ -194,14 +201,15 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       
       if (response.data) {
         // If API call successful, update local state
-        setRecipes(prev => 
-          prev.map(recipe => {
+        setRecipes(prev => {
+          if (!Array.isArray(prev)) return [response.data as Recipe];
+          return prev.map(recipe => {
             if (recipe.id === recipeId) {
               return response.data as Recipe;
             }
             return recipe;
-          })
-        );
+          });
+        });
       } else if (response.error) {
         throw new Error(response.error);
       }
