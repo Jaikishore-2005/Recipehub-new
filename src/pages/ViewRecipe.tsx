@@ -3,18 +3,19 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useRecipes } from "../contexts/RecipeContext";
 import { useAuth } from "../contexts/AuthContext";
 import { CookMode } from "../components/recipes/CookMode";
-import { ArrowLeft, Edit, Share, Clock, Play, User, Users, Timer } from "lucide-react";
+import { ArrowLeft, Edit, Share, Clock, Play, User, Users, Timer, MoreVertical, Trash2 } from "lucide-react";
 import { Recipe as RecipeType } from "../types";
 
 const ViewRecipe = () => {
   const { recipeId } = useParams<{ recipeId: string }>();
   const navigate = useNavigate();
-  const { getRecipeById } = useRecipes();
+  const { getRecipeById, deleteRecipe } = useRecipes();
   const { hasPermission, currentUser } = useAuth();
   
   const [recipe, setRecipe] = useState<RecipeType | null>(null);
   const [cookModeActive, setCookModeActive] = useState(false);
   const [servingsMultiplier, setServingsMultiplier] = useState(1);
+  const [showDropdown, setShowDropdown] = useState(false);
   
   useEffect(() => {
     if (recipeId) {
@@ -45,6 +46,21 @@ const ViewRecipe = () => {
   
   const canInvite = recipe && hasPermission(recipe, "invite_collaborators");
   const isOwner = recipe && currentUser && recipe.owner.id === currentUser.id;
+
+  // Handle delete recipe
+  const handleDeleteRecipe = async () => {
+    if (window.confirm("Are you sure you want to delete this recipe? This action cannot be undone.")) {
+      try {
+        await deleteRecipe(recipe.id);
+        navigate("/my-recipes");
+      } catch (error) {
+        console.error("Error deleting recipe:", error);
+        alert("Failed to delete recipe. Please try again.");
+      }
+    }
+    
+    setShowDropdown(false);
+  };
   
   // Calculate scaled ingredients based on servings multiplier
   const scaledIngredients = recipe.ingredients.map((ing) => ({
@@ -101,6 +117,30 @@ const ViewRecipe = () => {
                 <Play size={16} />
                 Cook Mode
               </button>
+
+              {isOwner && (
+                <div className="relative">
+                  <button
+                    onClick={() => setShowDropdown(!showDropdown)}
+                    className="btn-recipe-secondary flex items-center gap-1 p-2"
+                    title="More options"
+                  >
+                    <MoreVertical size={16} />
+                  </button>
+                  
+                  {showDropdown && (
+                    <div className="absolute right-0 mt-1 z-50 bg-white rounded-md shadow-lg border border-border w-40">
+                      <button
+                        onClick={handleDeleteRecipe}
+                        className="w-full flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-muted/50 text-left text-sm"
+                      >
+                        <Trash2 size={16} />
+                        Delete Recipe
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
           

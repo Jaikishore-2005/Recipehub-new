@@ -1,8 +1,9 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import { useRecipes } from "../../contexts/RecipeContext";
 import { Recipe } from "../../types";
-import { Edit, Share, Clock } from "lucide-react";
+import { Edit, Share, Clock, MoreVertical, Trash2 } from "lucide-react";
 
 interface RecipeCardProps {
   recipe: Recipe;
@@ -14,12 +15,38 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
   showActions = true,
 }) => {
   const { hasPermission, currentUser } = useAuth();
+  const { deleteRecipe } = useRecipes();
+  const navigate = useNavigate();
+  const [showDropdown, setShowDropdown] = useState(false);
 
   const isOwner = currentUser?.id === recipe.owner.id;
   const canEdit =
     hasPermission(recipe, "edit_own") ||
     hasPermission(recipe, "edit_if_invited");
   const canInvite = hasPermission(recipe, "invite_collaborators");
+
+  const handleDeleteClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (window.confirm("Are you sure you want to delete this recipe? This action cannot be undone.")) {
+      try {
+        await deleteRecipe(recipe.id);
+        // No need to navigate since the recipe will be removed from the list automatically
+      } catch (error) {
+        console.error("Error deleting recipe:", error);
+        alert("Failed to delete recipe. Please try again.");
+      }
+    }
+    
+    setShowDropdown(false);
+  };
+
+  const toggleDropdown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowDropdown(!showDropdown);
+  };
 
   return (
     <Link to={`/recipes/${recipe.id}`} className="block group">
@@ -116,6 +143,29 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
               >
                 <Share size={16} />
               </Link>
+            )}
+            {showActions && isOwner && (
+              <div className="relative">
+                <button
+                  className="p-2 rounded hover:bg-gray-100 transition"
+                  title="More options"
+                  onClick={toggleDropdown}
+                >
+                  <MoreVertical size={16} />
+                </button>
+                
+                {showDropdown && (
+                  <div className="absolute right-0 bottom-full mb-1 bg-white shadow-lg rounded-md border border-gray-200 py-1 z-10 w-32">
+                    <button
+                      className="w-full px-3 py-2 text-sm text-left text-red-600 hover:bg-gray-100 flex items-center gap-2"
+                      onClick={handleDeleteClick}
+                    >
+                      <Trash2 size={14} />
+                      Delete
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>
