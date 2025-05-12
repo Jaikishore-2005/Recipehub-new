@@ -1,6 +1,6 @@
-
 import React, { createContext, useState, useContext, useEffect } from "react";
 import { User, UserRole } from "../types";
+import api from "../services/api";
 
 interface AuthContextType {
   currentUser: User | null;
@@ -9,13 +9,6 @@ interface AuthContextType {
   logout: () => void;
   hasPermission: (recipe: any, permission: string) => boolean;
 }
-
-const defaultUser: User = {
-  id: "user-1",
-  name: "Jamie Oliver",
-  email: "jamie@example.com",
-  role: "logged-in"
-};
 
 const AuthContext = createContext<AuthContextType>({
   currentUser: null,
@@ -31,11 +24,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   
-  // Simulate checking if user is already logged in
+  // Check if user is already logged in
   useEffect(() => {
     const checkAuthStatus = () => {
       const savedUser = localStorage.getItem("recipehub_user");
-      if (savedUser) {
+      const token = localStorage.getItem("recipehub_token");
+      
+      if (savedUser && token) {
         setCurrentUser(JSON.parse(savedUser));
         setIsAuthenticated(true);
       }
@@ -45,17 +40,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
   
   const login = async (email: string, password: string) => {
-    // In a real app, this would call an API
-    // For demo, we'll simulate a successful login with the default user
-    setCurrentUser(defaultUser);
-    setIsAuthenticated(true);
-    localStorage.setItem("recipehub_user", JSON.stringify(defaultUser));
+    try {
+      const response = await api.auth.login(email, password);
+      
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      
+      if (response.data && response.data.user && response.data.token) {
+        const { user, token } = response.data;
+        setCurrentUser(user);
+        setIsAuthenticated(true);
+        localStorage.setItem("recipehub_user", JSON.stringify(user));
+        localStorage.setItem("recipehub_token", token);
+      }
+    } catch (error) {
+      console.error("Login failed:", error);
+      throw error;
+    }
   };
   
   const logout = () => {
     setCurrentUser(null);
     setIsAuthenticated(false);
     localStorage.removeItem("recipehub_user");
+    localStorage.removeItem("recipehub_token");
   };
   
   // Check permissions based on user role and recipe ownership
