@@ -43,10 +43,10 @@ exports.getPublicRecipes = async (req, res) => {
 /**
  * Get recipes by user ID
  */
-exports.getUserRecipes = (req, res) => {
+exports.getUserRecipes = async (req, res) => {
   try {
     const userId = req.params.userId;
-    const recipes = Recipe.getByUserId(userId);
+    const recipes = await Recipe.find({ 'owner.id': userId });
     res.json({
       message: 'User recipes retrieved successfully',
       count: recipes.length,
@@ -64,10 +64,12 @@ exports.getUserRecipes = (req, res) => {
 /**
  * Get recipes shared with user
  */
-exports.getSharedRecipes = (req, res) => {
+exports.getSharedRecipes = async (req, res) => {
   try {
     const userId = req.params.userId;
-    const recipes = Recipe.getSharedWithUser(userId);
+    const recipes = await Recipe.find({ 
+      'collaborators.user': userId 
+    });
     res.json({
       message: 'Shared recipes retrieved successfully',
       count: recipes.length,
@@ -85,9 +87,9 @@ exports.getSharedRecipes = (req, res) => {
 /**
  * Get a recipe by ID
  */
-exports.getRecipeById = (req, res) => {
+exports.getRecipeById = async (req, res) => {
   try {
-    const recipe = Recipe.findById(req.params.id);
+    const recipe = await Recipe.findById(req.params.id);
     if (!recipe) {
       return res.status(404).json({ 
         error: 'Not found', 
@@ -110,7 +112,7 @@ exports.getRecipeById = (req, res) => {
 /**
  * Create a new recipe
  */
-exports.createRecipe = (req, res) => {
+exports.createRecipe = async (req, res) => {
   try {
     const recipeData = req.body;
     
@@ -128,7 +130,7 @@ exports.createRecipe = (req, res) => {
       name: req.user.name
     };
     
-    const newRecipe = Recipe.create(recipeData);
+    const newRecipe = await Recipe.create(recipeData);
     res.status(201).json({
       message: 'Recipe created successfully',
       recipe: newRecipe
@@ -145,7 +147,7 @@ exports.createRecipe = (req, res) => {
 /**
  * Update a recipe
  */
-exports.updateRecipe = (req, res) => {
+exports.updateRecipe = async (req, res) => {
   try {
     const recipeId = req.params.id;
     const updateData = req.body;
@@ -166,7 +168,12 @@ exports.updateRecipe = (req, res) => {
       delete updateData.collaborators;
     }
     
-    const updatedRecipe = Recipe.update(recipeId, updateData);
+    const updatedRecipe = await Recipe.findByIdAndUpdate(
+      recipeId, 
+      updateData, 
+      { new: true }
+    );
+    
     if (!updatedRecipe) {
       return res.status(404).json({ 
         error: 'Not found', 
@@ -190,7 +197,7 @@ exports.updateRecipe = (req, res) => {
 /**
  * Delete a recipe
  */
-exports.deleteRecipe = (req, res) => {
+exports.deleteRecipe = async (req, res) => {
   try {
     const recipeId = req.params.id;
     
@@ -202,7 +209,7 @@ exports.deleteRecipe = (req, res) => {
       });
     }
     
-    const deleted = Recipe.delete(recipeId);
+    const deleted = await Recipe.findByIdAndDelete(recipeId);
     if (!deleted) {
       return res.status(404).json({ 
         error: 'Not found', 
@@ -225,7 +232,7 @@ exports.deleteRecipe = (req, res) => {
 /**
  * Add a collaborator to a recipe
  */
-exports.addCollaborator = (req, res) => {
+exports.addCollaborator = async (req, res) => {
   try {
     const recipeId = req.params.id;
     const collaborator = req.body;
@@ -238,7 +245,8 @@ exports.addCollaborator = (req, res) => {
       });
     }
     
-    const recipe = Recipe.addCollaborator(recipeId, collaborator);
+    // Find the recipe first
+    const recipe = await Recipe.findById(recipeId);
     if (!recipe) {
       return res.status(404).json({ 
         error: 'Not found', 
@@ -246,9 +254,13 @@ exports.addCollaborator = (req, res) => {
       });
     }
     
+    // Add collaborator to the recipe
+    recipe.collaborators.push(collaborator);
+    const updatedRecipe = await recipe.save();
+    
     res.json({
       message: 'Collaborator added successfully',
-      recipe
+      recipe: updatedRecipe
     });
   } catch (error) {
     console.error('Add collaborator error:', error);
@@ -262,12 +274,13 @@ exports.addCollaborator = (req, res) => {
 /**
  * Remove a collaborator from a recipe
  */
-exports.removeCollaborator = (req, res) => {
+exports.removeCollaborator = async (req, res) => {
   try {
     const recipeId = req.params.id;
     const collaboratorId = req.params.collaboratorId;
     
-    const recipe = Recipe.removeCollaborator(recipeId, collaboratorId);
+    // Find the recipe first
+    const recipe = await Recipe.findById(recipeId);
     if (!recipe) {
       return res.status(404).json({ 
         error: 'Not found', 
@@ -275,9 +288,16 @@ exports.removeCollaborator = (req, res) => {
       });
     }
     
+    // Remove collaborator from the recipe
+    recipe.collaborators = recipe.collaborators.filter(
+      collab => collab._id.toString() !== collaboratorId
+    );
+    
+    const updatedRecipe = await recipe.save();
+    
     res.json({
       message: 'Collaborator removed successfully',
-      recipe
+      recipe: updatedRecipe
     });
   } catch (error) {
     console.error('Remove collaborator error:', error);
