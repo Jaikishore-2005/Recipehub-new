@@ -110,9 +110,7 @@ const api = {
     
     delete: (id: string) => {
       console.log(`Making DELETE request to /api/recipes/${id}`);
-      return fetchApi(`/api/recipes/${id}`, 'DELETE', null, {
-        'Cache-Control': 'no-cache',
-      });
+      return fetchApi(`/api/recipes/${id}`, 'DELETE');
     },
     
     getPublic: () => fetchApi('/api/recipes/public'),
