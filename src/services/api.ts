@@ -38,7 +38,6 @@ async function fetchApi<T>(
       ...config.API_HEADERS,
       ...headers,
     },
-    // Remove credentials since we're allowing all origins
     mode: 'cors',
   };
 
@@ -57,7 +56,7 @@ async function fetchApi<T>(
   }
 
   try {
-    console.log('Fetching from:', url);
+    console.log('Fetching from:', url, 'with options:', options);
     const response = await fetch(url, options);
     
     // For non-JSON responses
@@ -69,6 +68,7 @@ async function fetchApi<T>(
     }
     
     const data = await response.json();
+    console.log('Response data:', data);
     
     if (!response.ok) {
       console.error('API error:', data);

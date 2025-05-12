@@ -40,8 +40,10 @@ const Signup = () => {
     setError("");
     
     try {
+      console.log("Attempting signup with:", { name, email });
       // Call the signup API endpoint
       const response = await api.auth.signup(name, email, password);
+      console.log("Signup response:", response);
       
       if (response.error) {
         setError(response.error);
@@ -61,6 +63,7 @@ const Signup = () => {
         setError("Registration successful but failed to get authentication data");
       }
     } catch (err: unknown) {
+      console.error("Signup error:", err);
       if (err instanceof Error) {
         setError(err.message);
       } else {
