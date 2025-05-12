@@ -43,10 +43,19 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
   });
 
   const isOwner = currentUser?.id && safeRecipe.owner?.id && currentUser.id === safeRecipe.owner.id;
-  const canEdit =
-    hasPermission(safeRecipe, "edit_own") ||
-    hasPermission(safeRecipe, "edit_if_invited");
-  const canInvite = hasPermission(safeRecipe, "invite_collaborators");
+  
+  // Check if the current user is a collaborator
+  const isCollaborator = currentUser?.id && Array.isArray(safeRecipe.collaborators) && 
+    safeRecipe.collaborators.some(collab => 
+      (collab.id === currentUser.id) || 
+      ((collab as any).user && (collab as any).user === currentUser.id) ||
+      (collab.email && collab.email.toLowerCase() === currentUser.email?.toLowerCase())
+    );
+  
+  // Permission checks for actions
+  const canEdit = isOwner || isCollaborator;
+  const canShare = isOwner;
+  const canDelete = isOwner; // Only owner can delete
 
   // Helper to safely access owner name
   const ownerName = safeRecipe.owner?.name || "Unknown";
@@ -201,17 +210,17 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
             {showActions && canEdit && (
               <button
                 className="p-2 rounded hover:bg-gray-100 transition"
-                title="Edit recipe"
+                title={isOwner ? "Edit recipe" : "Edit as collaborator"}
                 onClick={(e) => {
                   e.stopPropagation();
                   const recipeId = (recipe as any)._id || safeRecipe.id;
                   navigate(`/recipes/${recipeId}/edit`);
                 }}
               >
-                <Edit size={16} />
+                <Edit size={16} className={isCollaborator && !isOwner ? "text-blue-500" : ""} />
               </button>
             )}
-            {showActions && canInvite && (
+            {showActions && canShare && (
               <button
                 className="p-2 rounded hover:bg-gray-100 transition"
                 title="Share recipe"
@@ -224,7 +233,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
                 <Share size={16} />
               </button>
             )}
-            {showActions && isOwner && (
+            {showActions && canDelete && (
               <div className="relative">
                 <button
                   className="p-2 rounded hover:bg-gray-100 transition"
@@ -250,6 +259,14 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
                   </div>
                 )}
               </div>
+            )}
+            {isCollaborator && !isOwner && (
+              <span 
+                className="text-xs text-blue-500 italic my-auto" 
+                title="You are a collaborator on this recipe"
+              >
+                Collaborator
+              </span>
             )}
           </div>
         </div>
