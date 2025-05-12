@@ -4,7 +4,6 @@ import { useAuth } from "../contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { UserPlus } from "lucide-react";
 import api from "../services/api";
-import config from "../config";
 
 const Signup = () => {
   const [name, setName] = useState("");
@@ -13,7 +12,6 @@ const Signup = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [apiResponse, setApiResponse] = useState<any>(null);
   
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -40,44 +38,34 @@ const Signup = () => {
     
     setIsLoading(true);
     setError("");
-    setApiResponse(null);
     
     try {
       console.log("Attempting signup with:", { name, email });
+      // Call the signup API endpoint
+      const response = await api.auth.signup(name, email, password);
+      console.log("Signup response:", response);
       
-      // Try direct fetch to test the API
-      const directFetchResponse = await fetch(`${config.API_URL}/api/auth/signup`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ name, email, password })
-      });
-      
-      const directData = await directFetchResponse.json();
-      setApiResponse({
-        status: directFetchResponse.status,
-        data: directData
-      });
-      
-      if (!directFetchResponse.ok) {
-        if (directData && directData.error) {
-          setError(directData.error);
-        } else {
-          setError(`Error ${directFetchResponse.status}: ${directFetchResponse.statusText}`);
-        }
+      if (response.error) {
+        setError(response.error);
         return;
       }
       
-      // Show success message using alert or toast
-      alert("Account created successfully! Please log in with your credentials.");
-      
-      // Redirect to login page
-      navigate("/login");
+      if (response.data && response.data.token) {
+        // Don't store token and user data, just show success message and redirect to login
+        setError("");
+        
+        // Show success message using alert or toast
+        alert("Account created successfully! Please log in with your credentials.");
+        
+        // Redirect to login page instead of home
+        navigate("/login");
+      } else {
+        setError("Registration successful but failed to get authentication data");
+      }
     } catch (err: unknown) {
       console.error("Signup error:", err);
       if (err instanceof Error) {
-        setError(`Network error: ${err.message}`);
+        setError(err.message);
       } else {
         setError("An error occurred during signup");
       }
@@ -203,13 +191,6 @@ const Signup = () => {
               </Link>
             </p>
           </div>
-          
-          {apiResponse && (
-            <div className="mt-6 p-3 bg-gray-100 rounded-lg text-xs overflow-auto max-h-48">
-              <strong>API Response:</strong>
-              <pre>{JSON.stringify(apiResponse, null, 2)}</pre>
-            </div>
-          )}
         </div>
       </div>
     </div>
