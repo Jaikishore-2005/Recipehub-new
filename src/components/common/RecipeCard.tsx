@@ -54,7 +54,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
   
   // Permission checks for actions
   const canEdit = isOwner || isCollaborator;
-  const canShare = isOwner;
+  const canShare = isOwner || isCollaborator; // Allow collaborators to share too
   const canDelete = isOwner; // Only owner can delete
 
   // Helper to safely access owner name
@@ -223,14 +223,14 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
             {showActions && canShare && (
               <button
                 className="p-2 rounded hover:bg-gray-100 transition"
-                title="Share recipe"
+                title={isOwner ? "Share recipe" : "Share as collaborator"}
                 onClick={(e) => {
                   e.stopPropagation();
                   const recipeId = (recipe as any)._id || safeRecipe.id;
                   navigate(`/recipes/${recipeId}/share`);
                 }}
               >
-                <Share size={16} />
+                <Share size={16} className={isCollaborator && !isOwner ? "text-blue-500" : ""} />
               </button>
             )}
             {showActions && canDelete && (
