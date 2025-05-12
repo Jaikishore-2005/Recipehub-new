@@ -164,18 +164,32 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   
   const updateRecipe = async (updatedRecipe: Recipe) => {
     try {
-      const response = await api.recipes.update(updatedRecipe.id, updatedRecipe);
+      // Use MongoDB _id if available, otherwise use standard id
+      const recipeId = (updatedRecipe as any)._id || updatedRecipe.id;
+      console.log("Updating recipe with ID:", recipeId);
+      console.log("Update recipe data:", updatedRecipe);
+      
+      const response = await api.recipes.update(recipeId, updatedRecipe);
       
       if (response.data) {
+        console.log("API response for update:", response.data);
         // If API call successful, update local state
         setRecipes(prev => {
           if (!Array.isArray(prev)) return [response.data as Recipe];
-          return prev.map(recipe => 
-            recipe.id === updatedRecipe.id ? response.data as Recipe : recipe
-          );
+          return prev.map(recipe => {
+            // Match by either id or _id
+            if (recipe.id === updatedRecipe.id || 
+               (recipe as any)._id === (updatedRecipe as any)._id ||
+               recipe.id === recipeId || 
+               (recipe as any)._id === recipeId) {
+              return response.data as Recipe;
+            }
+            return recipe;
+          });
         });
         return response.data as Recipe;
       } else if (response.error) {
+        console.error("API error for update:", response.error);
         throw new Error(response.error);
       }
     } catch (error) {

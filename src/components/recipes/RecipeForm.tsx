@@ -148,7 +148,15 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(recipe);
+    
+    // Add MongoDB _id if it exists in the initialRecipe
+    const recipeToSubmit = {
+      ...recipe,
+      _id: (initialRecipe as any)?._id
+    };
+    
+    console.log("Submitting recipe form with data:", recipeToSubmit);
+    onSubmit(recipeToSubmit);
   };
 
   return (
@@ -429,9 +437,12 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
       </div>
 
       {!isReadOnly && (
-        <div className="flex justify-end">
-          <Button type="submit" className="btn-recipe-primary">
-            {initialRecipe.id ? "Update Recipe" : "Create Recipe"}
+        <div className="flex justify-end mt-8">
+          <Button 
+            type="submit" 
+            className="btn-recipe-primary text-lg px-6 py-3"
+          >
+            {initialRecipe.id || (initialRecipe as any)?._id ? "Update Recipe" : "Create Recipe"}
           </Button>
         </div>
       )}

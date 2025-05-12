@@ -11,7 +11,7 @@ import { useIsMobile } from "../hooks/use-mobile";
 const CreateEditRecipe = () => {
   const { recipeId } = useParams<{ recipeId: string }>();
   const navigate = useNavigate();
-  const { getRecipeById, createRecipe, updateRecipe, addCollaborator, removeCollaborator } = useRecipes();
+  const { recipes, getRecipeById, createRecipe, updateRecipe, addCollaborator, removeCollaborator } = useRecipes();
   const { isAuthenticated, hasPermission, currentUser } = useAuth();
   const isMobile = useIsMobile();
   const [collabMenuOpen, setCollabMenuOpen] = useState(false);
@@ -24,37 +24,59 @@ const CreateEditRecipe = () => {
   
   useEffect(() => {
     if (isEditing && recipeId) {
-      const fetchedRecipe = getRecipeById(recipeId);
+      console.log("Looking for recipe with ID:", recipeId);
+      
+      // First try to find by standard id
+      let fetchedRecipe = getRecipeById(recipeId);
+      
+      // If not found, try to find by MongoDB _id directly
+      if (!fetchedRecipe && Array.isArray(recipes)) {
+        fetchedRecipe = recipes.find(r => (r as any)._id === recipeId);
+        if (fetchedRecipe) {
+          console.log("Found recipe by _id:", fetchedRecipe);
+        }
+      }
+      
       if (fetchedRecipe) {
-        setRecipe(fetchedRecipe);
+        console.log("Setting recipe for editing:", fetchedRecipe);
+        
+        // Ensure recipe has standard id
+        const completeRecipe = {
+          ...fetchedRecipe,
+          id: fetchedRecipe.id || (fetchedRecipe as any)._id
+        };
+        
+        setRecipe(completeRecipe);
 
         // Defensive: check by owner id (since owner.email may be missing)
         const isOwner =
-          fetchedRecipe.owner &&
+          completeRecipe.owner &&
           currentUser &&
-          fetchedRecipe.owner.id === currentUser.id;
+          completeRecipe.owner.id === currentUser.id;
 
-        const isCollaborator = fetchedRecipe.collaborators.some(
-          (collab) => collab.email === currentUser?.email
-        );
+        const isCollaborator = completeRecipe.collaborators && Array.isArray(completeRecipe.collaborators) && 
+          completeRecipe.collaborators.some(collab => collab.id === currentUser?.id);
+        
         const canEdit = isOwner || isCollaborator;
 
         // Debug logs
-        console.log("Recipe owner object:", fetchedRecipe.owner);
+        console.log("Recipe owner object:", completeRecipe.owner);
         console.log("Current user:", currentUser);
         console.log("Is owner?", isOwner);
         console.log("Is collaborator?", isCollaborator);
         console.log("Can edit?", canEdit);
 
         if (!canEdit) {
-          navigate(`/recipes/${fetchedRecipe.id}`);
+          const recipeDetailId = completeRecipe.id || (completeRecipe as any)._id;
+          navigate(`/recipes/${recipeDetailId}`);
           return;
         }
       } else {
+        console.error("Recipe not found for editing:", recipeId);
         navigate("/");
       }
     }
-  }, [recipeId, getRecipeById, navigate, isEditing, currentUser]);
+  }, [recipeId, getRecipeById, navigate, isEditing, currentUser, recipes]);
   
   // Redirect if not authenticated
   if (!isAuthenticated) {
@@ -77,11 +99,21 @@ const CreateEditRecipe = () => {
   // Handle form submission
   const handleSubmit = (recipeData: Partial<Recipe>) => {
     if (isEditing && recipe) {
-      updateRecipe({
+      // Get the id to use for navigation (prefer _id from MongoDB)
+      const recipeId = (recipe as any)._id || recipe.id;
+      console.log("Updating recipe with ID:", recipeId);
+      
+      // Ensure we include both id and _id if they exist
+      const updatedRecipe = {
         ...recipe,
-        ...recipeData
-      });
-      navigate(`/recipes/${recipe.id}`);
+        ...recipeData,
+        id: recipe.id || (recipe as any)._id,
+        _id: (recipe as any)._id
+      };
+      
+      console.log("Updating recipe with data:", updatedRecipe);
+      updateRecipe(updatedRecipe as Recipe);
+      navigate(`/recipes/${recipeId}`);
     } else {
       createRecipe(recipeData as Omit<Recipe, "id" | "createdAt" | "updatedAt">);
       navigate("/my-recipes");
