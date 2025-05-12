@@ -21,7 +21,7 @@ const recipeRoutes = require('./routes/recipeRoutes');
 const userRoutes = require('./routes/userRoutes');
 
 // Import seed data for development
-const { seedData, clearAllData } = require('./data/seed');
+const { seedData } = require('./data/seed');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -32,10 +32,11 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
 
 // CORS Configuration
 const corsOptions = {
-  origin: '*', // Allow all origins for now
-  credentials: true,
+  origin: '*', // Allow all origins for debugging
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Access-Control-Allow-Origin'],
+  exposedHeaders: ['Access-Control-Allow-Origin'],
+  credentials: false
 };
 
 // Middleware
@@ -161,26 +162,6 @@ app.get('/api', (req, res) => {
 // API routes
 app.use('/api/recipes', recipeRoutes);
 app.use('/api/users', userRoutes);
-
-// Admin endpoint to clear all recipes - protected by admin password
-// Only use this in development or when migrating data
-// Usage: /api/admin/clear-recipes?key=YOUR_ADMIN_PASSWORD
-app.get('/api/admin/clear-recipes', async (req, res) => {
-  const adminKey = process.env.ADMIN_KEY || 'dev_admin_key';
-  const requestKey = req.query.key;
-  
-  if (!requestKey || requestKey !== adminKey) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-  
-  try {
-    const result = await clearAllData();
-    return res.status(200).json(result);
-  } catch (error) {
-    console.error('Error clearing recipes:', error);
-    return res.status(500).json({ error: 'Error clearing data', details: error.message });
-  }
-});
 
 // 404 handler
 app.use((req, res, next) => {
