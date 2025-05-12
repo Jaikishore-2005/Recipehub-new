@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
@@ -12,6 +11,10 @@ const Home = () => {
   
   // Get the most recently updated recipes
   const recentRecipes = [...recipes]
+    .filter(recipe => {
+      // Filter out recipes with "Untitled Recipe" as title or recipes with no title
+      return recipe.title && recipe.title.trim() !== "Untitled Recipe";
+    })
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
     .slice(0, 4);
   

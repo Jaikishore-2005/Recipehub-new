@@ -11,11 +11,13 @@ import { useIsMobile } from "../hooks/use-mobile";
 const CreateEditRecipe = () => {
   const { recipeId } = useParams<{ recipeId: string }>();
   const navigate = useNavigate();
-  const { recipes, getRecipeById, createRecipe, updateRecipe, addCollaborator, removeCollaborator } = useRecipes();
+  const { recipes, getRecipeById, createRecipe, updateRecipe, addCollaborator, removeCollaborator, fetchAllRecipes } = useRecipes();
   const { isAuthenticated, hasPermission, currentUser } = useAuth();
   const isMobile = useIsMobile();
   const [collabMenuOpen, setCollabMenuOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [syncSuccess, setSyncSuccess] = useState(false);
+  const [syncMessage, setSyncMessage] = useState("");
   
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   
@@ -120,25 +122,90 @@ const CreateEditRecipe = () => {
     }
   };
   
-  const handleAddCollaborator = (collaborator: any) => {
+  const handleAddCollaborator = async (collaborator: any) => {
     if (recipe) {
-      addCollaborator(recipe.id, collaborator);
+      return addCollaborator(recipe.id, collaborator);
     }
+    return Promise.resolve(null);
   };
   
-  const handleRemoveCollaborator = (collaboratorId: string) => {
+  const handleRemoveCollaborator = async (collaboratorId: string) => {
     if (recipe) {
-      removeCollaborator(recipe.id, collaboratorId);
+      return removeCollaborator(recipe.id, collaboratorId);
     }
+    return Promise.resolve(null);
   };
   
   // Sync handler
   const handleSync = async () => {
     if (isEditing && recipeId) {
-      setSyncing(true);
-      const latest = getRecipeById(recipeId);
-      if (latest) setRecipe(latest);
-      setSyncing(false);
+      try {
+        setSyncing(true);
+        setSyncSuccess(false);
+        setSyncMessage("");
+        
+        // Fetch the latest version of the recipe from the API
+        await fetchAllRecipes();
+        const latest = getRecipeById(recipeId);
+        
+        if (latest) {
+          // Check what changed
+          const changes = [];
+          if (!recipe) {
+            changes.push("all recipe data");
+          } else {
+            if (latest.title !== recipe.title) changes.push("title");
+            if (latest.description !== recipe.description) changes.push("description");
+            if (latest.servings !== recipe.servings) changes.push("servings");
+            if (latest.isPublic !== recipe.isPublic) changes.push("visibility");
+            
+            // Check ingredients
+            const oldIngCount = recipe.ingredients?.length || 0;
+            const newIngCount = latest.ingredients?.length || 0;
+            if (oldIngCount !== newIngCount) {
+              changes.push("ingredients");
+            }
+            
+            // Check steps
+            const oldStepCount = recipe.steps?.length || 0;
+            const newStepCount = latest.steps?.length || 0;
+            if (oldStepCount !== newStepCount) {
+              changes.push("steps");
+            }
+          }
+          
+          // Ensure recipe has standard id
+          const completeRecipe = {
+            ...latest,
+            id: latest.id || (latest as any)._id
+          };
+          
+          setRecipe(completeRecipe);
+          console.log("Recipe synchronized successfully");
+          
+          // Create sync message
+          let message = changes.length > 0 
+            ? `Updated: ${changes.join(', ')}` 
+            : "No changes found";
+            
+          setSyncMessage(message);
+          
+          // Show success notification
+          setSyncSuccess(true);
+          
+          // Hide success notification after 5 seconds
+          setTimeout(() => {
+            setSyncSuccess(false);
+            setSyncMessage("");
+          }, 5000);
+        } else {
+          console.error("Could not find recipe after sync");
+        }
+      } catch (error) {
+        console.error("Error syncing recipe:", error);
+      } finally {
+        setSyncing(false);
+      }
     }
   };
   
@@ -158,13 +225,20 @@ const CreateEditRecipe = () => {
         </h1>
         <div className="flex items-center gap-2">
           {isEditing && (
-            <button
-              onClick={handleSync}
-              className="btn-recipe-primary flex items-center gap-1"
-              disabled={syncing}
-            >
-              {syncing ? "Syncing..." : "Sync Changes"}
-            </button>
+            <>
+              <button
+                onClick={handleSync}
+                className="btn-recipe-primary flex items-center gap-1"
+                disabled={syncing}
+              >
+                {syncing ? "Syncing..." : "Sync Changes"}
+              </button>
+              {syncSuccess && (
+                <div className="text-green-600 text-sm">
+                  Recipe synchronized! {syncMessage}
+                </div>
+              )}
+            </>
           )}
           {isMobile && recipe && (
             <div className="relative">

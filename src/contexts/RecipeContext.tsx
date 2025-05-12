@@ -61,22 +61,31 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const response = await api.recipes.getAll();
       console.log("API Response for all recipes:", response);
       
+      let recipesData: Recipe[] = [];
+      
       if (response.data && typeof response.data === 'object' && 'recipes' in response.data && Array.isArray(response.data.recipes)) {
         // If response follows the pattern { recipes: Recipe[] }
         console.log("Setting recipes from recipes array:", response.data.recipes);
-        setRecipes(response.data.recipes as Recipe[]);
+        recipesData = response.data.recipes as Recipe[];
       } else if (response.data && Array.isArray(response.data)) {
         // If response is directly an array of recipes
         console.log("Setting recipes from direct array:", response.data);
-        setRecipes(response.data as Recipe[]);
+        recipesData = response.data as Recipe[];
       } else if (response.data) {
         // Handle other response structures
         console.log("Unknown response structure:", response.data);
-        setRecipes([]);
-      } else {
-        console.log("No data in response");
-        setRecipes([]);
+        recipesData = [];
       }
+      
+      // Filter out invalid recipes (missing critical properties or marked as "Untitled Recipe")
+      const validRecipes = recipesData.filter(recipe => {
+        if (!recipe) return false;
+        if (!recipe.id && !(recipe as any)._id) return false;
+        if (recipe.title === "Untitled Recipe" && !recipe.description) return false;
+        return true;
+      });
+      
+      setRecipes(validRecipes);
     } catch (error) {
       console.error("Error fetching recipes:", error);
       setRecipes([]);
@@ -92,22 +101,31 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const response = await api.recipes.getPublic();
       console.log("API Response for public recipes:", response);
       
+      let recipesData: Recipe[] = [];
+      
       if (response.data && typeof response.data === 'object' && 'recipes' in response.data && Array.isArray(response.data.recipes)) {
         // If response follows the pattern { recipes: Recipe[] }
         console.log("Setting public recipes from recipes array:", response.data.recipes);
-        setRecipes(response.data.recipes as Recipe[]);
+        recipesData = response.data.recipes as Recipe[];
       } else if (response.data && Array.isArray(response.data)) {
         // If response is directly an array of recipes
         console.log("Setting public recipes from direct array:", response.data);
-        setRecipes(response.data as Recipe[]);
+        recipesData = response.data as Recipe[];
       } else if (response.data) {
         // Handle other response structures
         console.log("Unknown response structure:", response.data);
-        setRecipes([]);
-      } else {
-        console.log("No data in response");
-        setRecipes([]);
+        recipesData = [];
       }
+      
+      // Filter out invalid recipes (missing critical properties or marked as "Untitled Recipe")
+      const validRecipes = recipesData.filter(recipe => {
+        if (!recipe) return false;
+        if (!recipe.id && !(recipe as any)._id) return false;
+        if (recipe.title === "Untitled Recipe" && !recipe.description) return false;
+        return true;
+      });
+      
+      setRecipes(validRecipes);
     } catch (error) {
       console.error("Error fetching public recipes:", error);
       setRecipes([]);
@@ -125,8 +143,15 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const sharedRecipes = Array.isArray(recipes) ? recipes.filter(
     recipe => 
       currentUser && 
-      Array.isArray(recipe.collaborators) &&
-      recipe.collaborators.some(collab => collab.id === currentUser.id)
+      (
+        // Check collaborators array in recipe
+        (Array.isArray(recipe.collaborators) &&
+        recipe.collaborators.some(collab => 
+          // Match by id or email
+          (collab.id === currentUser.id) || 
+          (collab.email && collab.email.toLowerCase() === currentUser.email.toLowerCase())
+        ))
+      )
   ) : [];
   
   // Get all public recipes
@@ -268,14 +293,20 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   
   const addCollaborator = async (recipeId: string, collaborator: Omit<Collaborator, "id">) => {
     try {
+      // Ensure email is properly set
+      if (!collaborator.email) {
+        console.error("Error inviting collaborator: Email is required");
+        throw new Error("Email is required for collaboration invitation");
+      }
+      
       // Use the new collaborator API endpoint
       const response = await api.collaborators.invite(recipeId, collaborator);
       
       if (response.data) {
         console.log("Collaboration invitation sent:", response.data);
         
-        // After successful invitation, refresh the recipe list
-        fetchAllRecipes();
+        // After successful invitation, refresh the recipe list to get the updated recipe
+        await fetchAllRecipes();
         
         return response.data;
       } else if (response.error) {
