@@ -21,7 +21,6 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import NotFound from "./pages/NotFound";
 import ChangePassword from "./pages/ChangePassword";
-import TestApiConnection from "./components/TestApiConnection";
 
 const queryClient = new QueryClient();
 
@@ -37,7 +36,6 @@ const App = () => (
               {/* Public routes */}
               <Route path="/login" element={<MainLayout><Login /></MainLayout>} />
               <Route path="/signup" element={<MainLayout><Signup /></MainLayout>} />
-              <Route path="/test-api" element={<MainLayout><TestApiConnection /></MainLayout>} />
               
               {/* Protected routes */}
               <Route path="/" element={
