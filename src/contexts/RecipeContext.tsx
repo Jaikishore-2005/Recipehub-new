@@ -86,7 +86,7 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   
   // Get recipes created by the current user
   const userRecipes = Array.isArray(recipes) ? recipes.filter(
-    recipe => currentUser && recipe.owner.id === currentUser.id
+    recipe => currentUser && recipe.owner && recipe.owner.id === currentUser.id
   ) : [];
   
   // Get recipes shared with the current user
@@ -107,9 +107,20 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const response = await api.recipes.create(recipe);
       
       if (response.data) {
+        console.log("API response for create recipe:", response.data);
+        const newRecipe = response.data as Recipe;
+        
+        // Ensure owner field is properly set if missing
+        if (!newRecipe.owner && currentUser) {
+          newRecipe.owner = {
+            id: currentUser.id,
+            name: currentUser.name || currentUser.id
+          };
+        }
+        
         // If API call successful, update local state
-        setRecipes(prev => Array.isArray(prev) ? [...prev, response.data as Recipe] : [response.data as Recipe]);
-        return response.data as Recipe;
+        setRecipes(prev => Array.isArray(prev) ? [...prev, newRecipe] : [newRecipe]);
+        return newRecipe;
       } else if (response.error) {
         throw new Error(response.error);
       }
