@@ -127,25 +127,6 @@ const Login = () => {
             </p>
           </div>
         </div>
-        
-        {/* Demo credentials */}
-        <div className="mt-6 text-center bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-          <p className="text-sm font-medium text-gray-700 mb-2">
-            Demo credentials:
-          </p>
-          <div className="grid grid-cols-1 gap-1">
-            <div className="bg-gray-50 rounded-md p-2">
-              <p className="text-sm">
-                <span className="text-gray-500">Email:</span> <span className="font-mono text-gray-800">demo@example.com</span>
-              </p>
-            </div>
-            <div className="bg-gray-50 rounded-md p-2">
-              <p className="text-sm">
-                <span className="text-gray-500">Password:</span> <span className="font-mono text-gray-800">password123</span>
-              </p>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
