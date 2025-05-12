@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import { Recipe, Collaborator } from "../../types";
-import { X, Plus } from "lucide-react";
+import { X, Plus, Check, Loader2 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 
 interface CollaborationPanelProps {
   recipe: Recipe;
-  onAddCollaborator: (collaborator: Omit<Collaborator, "id">) => void;
-  onRemoveCollaborator: (collaboratorId: string) => void;
+  onAddCollaborator: (collaborator: Omit<Collaborator, "id">) => Promise<any>;
+  onRemoveCollaborator: (collaboratorId: string) => Promise<any>;
 }
 
 export const CollaborationPanel: React.FC<CollaborationPanelProps> = ({
@@ -15,22 +15,73 @@ export const CollaborationPanel: React.FC<CollaborationPanelProps> = ({
   onRemoveCollaborator
 }) => {
   const [email, setEmail] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   
   const { currentUser } = useAuth();
   const isOwner = currentUser?.id === recipe.owner.id;
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (email.trim() === "") return;
     
-    onAddCollaborator({
-      name: email.split("@")[0], // Simple name generation from email
-      email,
-      avatar: undefined
-    });
+    setError(null);
+    setSuccess(null);
+    setSubmitting(true);
     
-    // Clear form
-    setEmail("");
+    try {
+      // Simple email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        throw new Error("Please enter a valid email address");
+      }
+      
+      // Check if user is trying to invite themselves
+      if (currentUser && email.toLowerCase() === currentUser.email.toLowerCase()) {
+        throw new Error("You can't invite yourself as a collaborator");
+      }
+      
+      // Check if already a collaborator
+      const isAlreadyCollaborator = recipe.collaborators.some(
+        collab => collab.email && collab.email.toLowerCase() === email.toLowerCase()
+      );
+      
+      if (isAlreadyCollaborator) {
+        throw new Error("This person is already a collaborator");
+      }
+      
+      await onAddCollaborator({
+        name: email.split("@")[0], // Simple name generation from email
+        email,
+        role: "editor",
+        avatar: undefined
+      });
+      
+      // Show success message
+      setSuccess(`Invitation sent to ${email}`);
+      
+      // Clear form
+      setEmail("");
+    } catch (err) {
+      console.error("Error inviting collaborator:", err);
+      setError(err instanceof Error ? err.message : "Failed to send invitation");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+  
+  const handleRemoveCollaborator = async (collaboratorId: string) => {
+    try {
+      setSubmitting(true);
+      await onRemoveCollaborator(collaboratorId);
+      setSuccess("Collaborator removed successfully");
+    } catch (err) {
+      console.error("Error removing collaborator:", err);
+      setError("Failed to remove collaborator");
+    } finally {
+      setSubmitting(false);
+    }
   };
   
   if (!isOwner) {
@@ -84,8 +135,9 @@ export const CollaborationPanel: React.FC<CollaborationPanelProps> = ({
                 </div>
                 <div className="flex items-center gap-2">
                   <button 
-                    onClick={() => onRemoveCollaborator(collaborator.id)}
+                    onClick={() => handleRemoveCollaborator(collaborator.id)}
                     className="p-1 hover:bg-muted-foreground/10 rounded"
+                    disabled={submitting}
                   >
                     <X size={16} className="text-muted-foreground" />
                   </button>
@@ -99,6 +151,19 @@ export const CollaborationPanel: React.FC<CollaborationPanelProps> = ({
       <form onSubmit={handleSubmit} className="space-y-3">
         <h3 className="text-sm font-medium">Invite Collaborator</h3>
         
+        {error && (
+          <div className="p-2 text-sm bg-red-50 text-red-600 rounded border border-red-200">
+            {error}
+          </div>
+        )}
+        
+        {success && (
+          <div className="p-2 text-sm bg-green-50 text-green-600 rounded border border-green-200 flex items-center gap-1">
+            <Check size={16} />
+            {success}
+          </div>
+        )}
+        
         <div>
           <label htmlFor="email" className="block text-xs text-muted-foreground mb-1">
             Email Address
@@ -111,15 +176,26 @@ export const CollaborationPanel: React.FC<CollaborationPanelProps> = ({
             className="w-full rounded-md border border-input p-2 text-sm"
             placeholder="collaborator@example.com"
             required
+            disabled={submitting}
           />
         </div>
         
         <button 
           type="submit" 
           className="w-full btn-recipe-primary flex items-center justify-center gap-1"
+          disabled={submitting}
         >
-          <Plus size={16} />
-          Add Collaborator
+          {submitting ? (
+            <>
+              <Loader2 size={16} className="animate-spin" />
+              Sending...
+            </>
+          ) : (
+            <>
+              <Plus size={16} />
+              Add Collaborator
+            </>
+          )}
         </button>
       </form>
     </div>

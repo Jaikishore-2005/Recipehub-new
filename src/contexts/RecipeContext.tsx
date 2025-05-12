@@ -16,8 +16,8 @@ interface RecipeContextType {
   updateRecipe: (recipe: Recipe) => Promise<Recipe | void>;
   deleteRecipe: (id: string) => Promise<void>;
   getRecipeById: (id: string) => Recipe | undefined;
-  addCollaborator: (recipeId: string, collaborator: Omit<Collaborator, "id">) => Promise<void>;
-  removeCollaborator: (recipeId: string, collaboratorId: string) => Promise<void>;
+  addCollaborator: (recipeId: string, collaborator: Omit<Collaborator, "id">) => Promise<any>;
+  removeCollaborator: (recipeId: string, collaboratorId: string) => Promise<any>;
   fetchAllRecipes: () => Promise<void>;
 }
 
@@ -268,23 +268,18 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   
   const addCollaborator = async (recipeId: string, collaborator: Omit<Collaborator, "id">) => {
     try {
-      // Assuming your API has an endpoint for adding collaborators
-      const response = await api.recipes.update(recipeId, { 
-        collaboratorToAdd: collaborator 
-      });
+      // Use the new collaborator API endpoint
+      const response = await api.collaborators.invite(recipeId, collaborator);
       
       if (response.data) {
-        // If API call successful, update local state
-        setRecipes(prev => {
-          if (!Array.isArray(prev)) return [response.data as Recipe];
-          return prev.map(recipe => {
-            if (recipe.id === recipeId) {
-              return response.data as Recipe;
-            }
-            return recipe;
-          });
-        });
+        console.log("Collaboration invitation sent:", response.data);
+        
+        // After successful invitation, refresh the recipe list
+        fetchAllRecipes();
+        
+        return response.data;
       } else if (response.error) {
+        console.error("Error inviting collaborator:", response.error);
         throw new Error(response.error);
       }
     } catch (error) {
@@ -295,23 +290,18 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   
   const removeCollaborator = async (recipeId: string, collaboratorId: string) => {
     try {
-      // Assuming your API has an endpoint for removing collaborators
-      const response = await api.recipes.update(recipeId, { 
-        collaboratorToRemove: collaboratorId 
-      });
+      // Use the new collaborator API endpoint
+      const response = await api.collaborators.remove(recipeId, collaboratorId);
       
       if (response.data) {
-        // If API call successful, update local state
-        setRecipes(prev => {
-          if (!Array.isArray(prev)) return [response.data as Recipe];
-          return prev.map(recipe => {
-            if (recipe.id === recipeId) {
-              return response.data as Recipe;
-            }
-            return recipe;
-          });
-        });
+        console.log("Collaborator removed:", response.data);
+        
+        // After successful removal, refresh the recipe list
+        fetchAllRecipes();
+        
+        return response.data;
       } else if (response.error) {
+        console.error("Error removing collaborator:", response.error);
         throw new Error(response.error);
       }
     } catch (error) {

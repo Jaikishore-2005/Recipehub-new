@@ -119,6 +119,32 @@ const api = {
     
     updateProfile: (userData: any) => 
       fetchApi('/api/users/profile', 'PUT', userData),
+  },
+  
+  // Collaborator endpoints
+  collaborators: {
+    // Get all invitations for the current user
+    getMyInvitations: () => fetchApi('/api/collaborators/my-invitations'),
+    
+    // Invite a collaborator
+    invite: (recipeId: string, collaboratorData: any) => 
+      fetchApi(`/api/collaborators/recipes/${recipeId}/invite`, 'POST', collaboratorData),
+    
+    // Get collaborators for a recipe
+    getForRecipe: (recipeId: string) => 
+      fetchApi(`/api/collaborators/recipes/${recipeId}`),
+    
+    // Accept an invitation
+    acceptInvitation: (invitationId: string) => 
+      fetchApi(`/api/collaborators/invitations/${invitationId}/accept`, 'PUT'),
+    
+    // Reject an invitation
+    rejectInvitation: (invitationId: string) => 
+      fetchApi(`/api/collaborators/invitations/${invitationId}/reject`, 'PUT'),
+    
+    // Remove a collaborator
+    remove: (recipeId: string, collaboratorId: string) => 
+      fetchApi(`/api/collaborators/recipes/${recipeId}/collaborators/${collaboratorId}`, 'DELETE'),
   }
 };
 
