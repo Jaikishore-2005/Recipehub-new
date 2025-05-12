@@ -22,6 +22,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
   // Ensure recipe has expected properties or provide defaults
   const safeRecipe = {
     ...recipe,
+    id: recipe.id || 'unknown-id', // Ensure we have an ID for navigation
     title: recipe.title || 'Untitled Recipe',
     description: recipe.description || 'No description available',
     servings: recipe.servings || 0,
@@ -168,7 +169,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
 
           {/* Action Buttons */}
           <div
-            className="flex gap-2"
+            className="flex gap-2 action-buttons"
             onClick={(e) => e.stopPropagation()}
           >
             {showActions && canEdit && (

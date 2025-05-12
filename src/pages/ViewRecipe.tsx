@@ -16,21 +16,45 @@ const ViewRecipe = () => {
   const [cookModeActive, setCookModeActive] = useState(false);
   const [servingsMultiplier, setServingsMultiplier] = useState(1);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   useEffect(() => {
     if (recipeId) {
-      const fetchedRecipe = getRecipeById(recipeId);
-      
-      if (fetchedRecipe) {
-        setRecipe(fetchedRecipe);
-      } else {
-        // Recipe not found, redirect to home
-        navigate("/");
+      try {
+        setLoading(true);
+        const fetchedRecipe = getRecipeById(recipeId);
+        console.log("Fetched recipe:", fetchedRecipe);
+        
+        if (fetchedRecipe) {
+          setRecipe(fetchedRecipe);
+          setError(null);
+        } else {
+          console.error("Recipe not found:", recipeId);
+          setError("Recipe not found");
+          // Don't navigate away immediately, show error first
+        }
+      } catch (err) {
+        console.error("Error fetching recipe:", err);
+        setError("Failed to load recipe");
+      } finally {
+        setLoading(false);
       }
     }
-  }, [recipeId, getRecipeById, navigate]);
+  }, [recipeId, getRecipeById]);
   
-  if (!recipe) {
+  // Handle navigation back if recipe not found
+  useEffect(() => {
+    if (!loading && error) {
+      const timer = setTimeout(() => {
+        navigate("/my-recipes");
+      }, 3000); // Navigate after 3 seconds
+      
+      return () => clearTimeout(timer);
+    }
+  }, [loading, error, navigate]);
+  
+  if (loading) {
     return (
       <div className="text-center py-12">
         <h1 className="text-2xl font-bold mb-4">Loading recipe...</h1>
@@ -38,13 +62,47 @@ const ViewRecipe = () => {
     );
   }
   
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <h1 className="text-2xl font-bold mb-4">Error: {error}</h1>
+        <p className="mb-4">Redirecting to your recipes...</p>
+        <button 
+          onClick={() => navigate("/my-recipes")}
+          className="btn-recipe-primary"
+        >
+          Go to My Recipes
+        </button>
+      </div>
+    );
+  }
+  
+  if (!recipe) {
+    return (
+      <div className="text-center py-12">
+        <h1 className="text-2xl font-bold mb-4">Recipe not found</h1>
+        <button 
+          onClick={() => navigate("/my-recipes")}
+          className="btn-recipe-primary"
+        >
+          Go to My Recipes
+        </button>
+      </div>
+    );
+  }
+  
   // Ensure recipe has valid arrays
   const safeRecipe = {
     ...recipe,
+    title: recipe.title || 'Untitled Recipe',
+    description: recipe.description || 'No description available',
+    servings: recipe.servings || 0,
+    updatedAt: recipe.updatedAt || new Date().toISOString(),
     ingredients: Array.isArray(recipe.ingredients) ? recipe.ingredients : [],
     steps: Array.isArray(recipe.steps) ? recipe.steps : [],
     tags: Array.isArray(recipe.tags) ? recipe.tags : [],
-    collaborators: Array.isArray(recipe.collaborators) ? recipe.collaborators : []
+    collaborators: Array.isArray(recipe.collaborators) ? recipe.collaborators : [],
+    owner: recipe.owner || { id: 'unknown', name: 'Unknown' }
   };
   
   // Permission logic
@@ -54,17 +112,43 @@ const ViewRecipe = () => {
     (hasPermission(safeRecipe, "edit_own") || hasPermission(safeRecipe, "edit_if_invited"));
   
   const canInvite = safeRecipe && hasPermission(safeRecipe, "invite_collaborators");
-  const isOwner = safeRecipe && currentUser && safeRecipe.owner.id === currentUser.id;
+  const isOwner = safeRecipe && currentUser && safeRecipe.owner && safeRecipe.owner.id === currentUser.id;
+
+  // Helper function to safely format date
+  const formatDate = (dateString: string) => {
+    try {
+      return new Date(dateString).toLocaleDateString();
+    } catch (error) {
+      console.error("Invalid date:", dateString);
+      return "Invalid Date";
+    }
+  };
 
   // Handle delete recipe
   const handleDeleteRecipe = async () => {
     if (window.confirm("Are you sure you want to delete this recipe? This action cannot be undone.")) {
       try {
+        console.log("Deleting recipe:", safeRecipe.id);
+        console.log("Owner check - Current user:", currentUser);
+        console.log("Owner check - Recipe owner:", safeRecipe.owner);
+        
+        // Verify ownership before attempting to delete
+        if (!isOwner) {
+          alert("You do not have permission to delete this recipe. Only the owner can delete recipes.");
+          return;
+        }
+        
         await deleteRecipe(safeRecipe.id);
+        // Success message
+        alert("Recipe deleted successfully!");
         navigate("/my-recipes");
       } catch (error) {
         console.error("Error deleting recipe:", error);
-        alert("Failed to delete recipe. Please try again.");
+        if (error instanceof Error && error.message.includes("ownership")) {
+          alert("Failed to delete recipe: Ownership verification failed. You may not be the owner of this recipe.");
+        } else {
+          alert(`Failed to delete recipe: ${error instanceof Error ? error.message : "Unknown error"}`);
+        }
       }
     }
     
@@ -190,7 +274,7 @@ const ViewRecipe = () => {
                     <h3 className="font-medium">Updated</h3>
                   </div>
                   <p className="text-sm mt-1">
-                    {new Date(safeRecipe.updatedAt).toLocaleDateString()}
+                    {formatDate(safeRecipe.updatedAt)}
                   </p>
                 </div>
                 
