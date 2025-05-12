@@ -134,11 +134,11 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
 
   return (
     <div 
-      className="block group cursor-pointer"
+      className="block group cursor-pointer w-full h-full"
       data-testid={`recipe-card-${safeRecipe.id}`}
       onClick={handleCardClick}
     >
-      <div className="recipe-card group hover:shadow-lg transition-shadow p-4 rounded-md bg-white border border-gray-200">
+      <div className="recipe-card group hover:shadow-lg transition-shadow p-4 rounded-md bg-white border border-gray-200 h-full flex flex-col">
         {/* Header: Title and Collaborators */}
         <div className="flex justify-between items-start mb-2">
           <h3 className="text-lg font-semibold text-gray-800">{safeRecipe.title}</h3>
@@ -175,7 +175,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
         <p className="text-sm text-gray-600 mb-3">{safeRecipe.description}</p>
 
         {/* Meta info */}
-        <div className="flex items-center gap-2 mb-3 text-xs text-gray-500">
+        <div className="flex items-center gap-2 mb-3 text-xs text-gray-500 flex-wrap">
           {safeRecipe.updatedAt && (
             <>
               <span className="flex items-center gap-1">
@@ -215,17 +215,17 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
         </div>
 
         {/* Footer: Owner and Actions */}
-        <div className="flex justify-between items-center mt-auto pt-2 border-t border-gray-200">
-          <span className="text-xs font-medium text-gray-700">
+        <div className="flex justify-between items-center mt-auto pt-2 border-t border-gray-200 w-full overflow-hidden">
+          <span className="text-xs font-medium text-gray-700 truncate mr-2">
             By {ownerName}
           </span>
 
           {/* Action Buttons and Status */}
-          <div className="flex items-center">
+          <div className="flex items-center flex-shrink-0">
             {/* Collaborator status badge - show before the action buttons */}
             {isCollaborator && !isOwner && (
               <span 
-                className="text-xs text-blue-500 bg-blue-50 px-2 py-1 rounded-full mr-2" 
+                className="text-xs text-blue-500 bg-blue-50 px-2 py-1 rounded-full mr-2 whitespace-nowrap" 
                 title="You are a collaborator on this recipe"
               >
                 Collaborator

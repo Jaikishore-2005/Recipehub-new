@@ -122,7 +122,9 @@ const Home = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {recentRecipes.map((recipe) => (
-            <RecipeCard key={recipe.id} recipe={recipe} showActions={false} />
+            <div key={recipe.id} className="h-full flex">
+              <RecipeCard recipe={recipe} showActions={false} />
+            </div>
           ))}
         </div>
         
@@ -148,7 +150,9 @@ const Home = () => {
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {userRecipes.slice(0, 4).map((recipe) => (
-                  <RecipeCard key={recipe.id} recipe={recipe} />
+                  <div key={recipe.id} className="h-full flex">
+                    <RecipeCard recipe={recipe} />
+                  </div>
                 ))}
               </div>
             </div>
@@ -166,7 +170,9 @@ const Home = () => {
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {sharedRecipes.slice(0, 4).map((recipe) => (
-                  <RecipeCard key={recipe.id} recipe={recipe} />
+                  <div key={recipe.id} className="h-full flex">
+                    <RecipeCard recipe={recipe} />
+                  </div>
                 ))}
               </div>
             </div>
