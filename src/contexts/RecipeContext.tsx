@@ -154,17 +154,42 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   
   const deleteRecipe = async (id: string) => {
     try {
-      const response = await api.recipes.delete(id);
+      console.log(`Attempting to delete recipe with ID: ${id}`);
       
-      if (response.data || !response.error) {
-        // If API call successful, update local state
-        setRecipes(prev => {
-          if (!Array.isArray(prev)) return [];
-          return prev.filter(recipe => recipe.id !== id);
-        });
-      } else if (response.error) {
+      // Get the current recipe to check ownership
+      const recipeToDelete = getRecipeById(id);
+      if (!recipeToDelete) {
+        console.error("Cannot delete: Recipe not found in local state");
+        throw new Error("Recipe not found");
+      }
+      
+      console.log("Recipe to delete:", recipeToDelete);
+      console.log("Current user:", currentUser);
+      
+      // Check if owner information is properly set
+      if (!recipeToDelete.owner || !recipeToDelete.owner.id) {
+        console.error("Cannot delete: Recipe has no owner information");
+        throw new Error("Recipe ownership information is missing");
+      }
+      
+      // Check if current user is the owner
+      if (currentUser && recipeToDelete.owner.id !== currentUser.id) {
+        console.warn("Warning: Attempting to delete a recipe where current user may not be the owner");
+      }
+      
+      const response = await api.recipes.delete(id);
+      console.log("Delete API response:", response);
+      
+      if (response.error) {
+        console.error("API error when deleting recipe:", response.error, response.message);
         throw new Error(response.error);
       }
+      
+      // If API call successful, update local state
+      setRecipes(prev => {
+        if (!Array.isArray(prev)) return [];
+        return prev.filter(recipe => recipe.id !== id);
+      });
     } catch (error) {
       console.error("Error deleting recipe:", error);
       throw error;

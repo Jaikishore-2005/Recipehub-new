@@ -42,11 +42,26 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
     
     if (window.confirm("Are you sure you want to delete this recipe? This action cannot be undone.")) {
       try {
+        console.log("Deleting recipe:", safeRecipe.id);
+        console.log("Owner check - Current user:", currentUser);
+        console.log("Owner check - Recipe owner:", safeRecipe.owner);
+        
+        // Verify ownership before attempting to delete
+        if (!isOwner) {
+          alert("You do not have permission to delete this recipe. Only the owner can delete recipes.");
+          return;
+        }
+        
         await deleteRecipe(safeRecipe.id);
-        // No need to navigate since the recipe will be removed from the list automatically
+        // Success message
+        alert("Recipe deleted successfully!");
       } catch (error) {
         console.error("Error deleting recipe:", error);
-        alert("Failed to delete recipe. Please try again.");
+        if (error instanceof Error && error.message.includes("ownership")) {
+          alert("Failed to delete recipe: Ownership verification failed. You may not be the owner of this recipe.");
+        } else {
+          alert(`Failed to delete recipe: ${error instanceof Error ? error.message : "Unknown error"}`);
+        }
       }
     }
     
