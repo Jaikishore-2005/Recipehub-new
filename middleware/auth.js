@@ -78,10 +78,10 @@ exports.protect = async (req, res, next) => {
  * Check if user is recipe owner or collaborator
  * Requires the protect middleware to run first
  */
-exports.checkRecipePermission = (req, res, next) => {
+exports.checkRecipePermission = async (req, res, next) => {
   try {
-    const { Recipe } = require('../models/RecipeModel');
-    const recipe = Recipe.findById(req.params.id);
+    const Recipe = require('../models/RecipeModel');
+    const recipe = await Recipe.findById(req.params.id);
     
     if (!recipe) {
       return res.status(404).json({ 
@@ -93,10 +93,10 @@ exports.checkRecipePermission = (req, res, next) => {
     const userId = req.user.id;
     
     // Check if user is owner
-    const isOwner = recipe.owner.id === userId;
+    const isOwner = recipe.owner.id.toString() === userId.toString();
     
     // Check if user is collaborator
-    const isCollaborator = recipe.collaborators.some(c => c.id === userId);
+    const isCollaborator = recipe.collaborators.some(c => c.user.toString() === userId.toString());
     
     if (!isOwner && !isCollaborator) {
       return res.status(403).json({ 
@@ -124,10 +124,10 @@ exports.checkRecipePermission = (req, res, next) => {
  * Check if user is recipe owner
  * Requires the protect middleware to run first
  */
-exports.checkRecipeOwner = (req, res, next) => {
+exports.checkRecipeOwner = async (req, res, next) => {
   try {
-    const { Recipe } = require('../models/RecipeModel');
-    const recipe = Recipe.findById(req.params.id);
+    const Recipe = require('../models/RecipeModel');
+    const recipe = await Recipe.findById(req.params.id);
     
     if (!recipe) {
       return res.status(404).json({ 
@@ -139,7 +139,7 @@ exports.checkRecipeOwner = (req, res, next) => {
     const userId = req.user.id;
     
     // Check if user is owner
-    if (recipe.owner.id !== userId) {
+    if (recipe.owner.id.toString() !== userId.toString()) {
       return res.status(403).json({ 
         error: 'Forbidden', 
         message: 'Only the recipe owner can perform this action' 
@@ -148,6 +148,7 @@ exports.checkRecipeOwner = (req, res, next) => {
     
     // Add recipe to request
     req.recipe = recipe;
+    req.isOwner = true;
     
     next();
   } catch (error) {

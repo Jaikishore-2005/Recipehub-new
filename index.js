@@ -18,7 +18,7 @@ console.log(`MongoDB URI: ${process.env.MONGO_URI}`);
 connectDB();
 
 // Import models
-const { Recipe } = require('./models/RecipeModel');
+const Recipe = require('./models/RecipeModel');
 
 // Import routes
 const recipeRoutes = require('./routes/recipeRoutes');
