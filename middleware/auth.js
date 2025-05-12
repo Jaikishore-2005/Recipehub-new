@@ -80,7 +80,7 @@ exports.protect = async (req, res, next) => {
  */
 exports.checkRecipePermission = async (req, res, next) => {
   try {
-    const { Recipe } = require('../models/RecipeModel');
+    const Recipe = require('../models/RecipeModel');
     const recipe = await Recipe.findById(req.params.id);
     
     if (!recipe) {
@@ -91,12 +91,24 @@ exports.checkRecipePermission = async (req, res, next) => {
     }
     
     const userId = req.user.id;
+    console.log('Checking recipe permissions:');
+    console.log(`User ID (from token): ${userId}`);
+    console.log(`Recipe owner ID: ${recipe.owner.id}`);
+    
+    // Convert IDs to strings for consistent comparison
+    const userIdStr = userId.toString();
+    const ownerIdStr = recipe.owner.id.toString();
     
     // Check if user is owner
-    const isOwner = recipe.owner.id === userId;
+    const isOwner = ownerIdStr === userIdStr;
     
     // Check if user is collaborator
-    const isCollaborator = recipe.collaborators.some(c => c.id === userId);
+    const isCollaborator = recipe.collaborators.some(c => {
+      if (!c.user) return false;
+      return c.user.toString() === userIdStr;
+    });
+    
+    console.log(`Is owner: ${isOwner}, Is collaborator: ${isCollaborator}`);
     
     if (!isOwner && !isCollaborator) {
       return res.status(403).json({ 
@@ -126,7 +138,7 @@ exports.checkRecipePermission = async (req, res, next) => {
  */
 exports.checkRecipeOwner = async (req, res, next) => {
   try {
-    const { Recipe } = require('../models/RecipeModel');
+    const Recipe = require('../models/RecipeModel');
     const recipe = await Recipe.findById(req.params.id);
     
     if (!recipe) {
@@ -137,14 +149,25 @@ exports.checkRecipeOwner = async (req, res, next) => {
     }
     
     const userId = req.user.id;
+    console.log('Checking recipe ownership:');
+    console.log(`User ID (from token): ${userId} (${typeof userId})`);
+    console.log(`Recipe owner ID: ${recipe.owner.id} (${typeof recipe.owner.id})`);
+    
+    // Convert both IDs to strings for consistent comparison
+    const userIdStr = userId.toString();
+    const ownerIdStr = recipe.owner.id.toString();
+    console.log(`Comparing: ${userIdStr} === ${ownerIdStr}`);
     
     // Check if user is owner
-    if (recipe.owner.id !== userId) {
+    if (ownerIdStr !== userIdStr) {
+      console.log('Owner check failed: IDs do not match');
       return res.status(403).json({ 
         error: 'Forbidden', 
         message: 'Only the recipe owner can perform this action' 
       });
     }
+    
+    console.log('Owner check passed');
     
     // Add recipe to request
     req.recipe = recipe;
