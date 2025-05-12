@@ -80,7 +80,7 @@ exports.protect = async (req, res, next) => {
  */
 exports.checkRecipePermission = async (req, res, next) => {
   try {
-    const Recipe = require('../models/RecipeModel');
+    const { Recipe } = require('../models/RecipeModel');
     const recipe = await Recipe.findById(req.params.id);
     
     if (!recipe) {
@@ -93,10 +93,10 @@ exports.checkRecipePermission = async (req, res, next) => {
     const userId = req.user.id;
     
     // Check if user is owner
-    const isOwner = recipe.owner.id.toString() === userId.toString();
+    const isOwner = recipe.owner.id === userId;
     
     // Check if user is collaborator
-    const isCollaborator = recipe.collaborators.some(c => c.user.toString() === userId.toString());
+    const isCollaborator = recipe.collaborators.some(c => c.id === userId);
     
     if (!isOwner && !isCollaborator) {
       return res.status(403).json({ 
@@ -126,7 +126,7 @@ exports.checkRecipePermission = async (req, res, next) => {
  */
 exports.checkRecipeOwner = async (req, res, next) => {
   try {
-    const Recipe = require('../models/RecipeModel');
+    const { Recipe } = require('../models/RecipeModel');
     const recipe = await Recipe.findById(req.params.id);
     
     if (!recipe) {
@@ -139,7 +139,7 @@ exports.checkRecipeOwner = async (req, res, next) => {
     const userId = req.user.id;
     
     // Check if user is owner
-    if (recipe.owner.id.toString() !== userId.toString()) {
+    if (recipe.owner.id !== userId) {
       return res.status(403).json({ 
         error: 'Forbidden', 
         message: 'Only the recipe owner can perform this action' 
@@ -148,7 +148,6 @@ exports.checkRecipeOwner = async (req, res, next) => {
     
     // Add recipe to request
     req.recipe = recipe;
-    req.isOwner = true;
     
     next();
   } catch (error) {
