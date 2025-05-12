@@ -38,7 +38,9 @@ async function fetchApi<T>(
       ...config.API_HEADERS,
       ...headers,
     },
-    credentials: 'include',
+    // Changed from 'include' to 'same-origin' to avoid CORS issues
+    credentials: 'same-origin',
+    mode: 'cors',
   };
 
   // Add body for non-GET requests
@@ -56,10 +58,21 @@ async function fetchApi<T>(
   }
 
   try {
+    console.log('Fetching from:', url);
     const response = await fetch(url, options);
+    
+    // For non-JSON responses
+    if (!response.headers.get('content-type')?.includes('application/json')) {
+      if (!response.ok) {
+        return { error: `Error: ${response.status} - ${response.statusText}` };
+      }
+      return { data: {} as T };
+    }
+    
     const data = await response.json();
-
+    
     if (!response.ok) {
+      console.error('API error:', data);
       return { 
         error: data.error || `Error: ${response.status}` 
       };
