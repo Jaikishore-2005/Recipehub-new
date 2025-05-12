@@ -30,11 +30,33 @@ const JWT_SECRET = process.env.JWT_SECRET || 'recipe_hub_dev_secret_key';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
 
+// CORS Configuration
+const corsOptions = {
+  origin: function (origin, callback) {
+    // In development, allow localhost
+    // In production, allow the Vercel deployment and null origin (for Postman/direct API calls)
+    const allowedOrigins = [
+      'http://localhost:5173', 
+      'http://localhost:5174',
+      'https://recipehub-new.vercel.app',
+      'https://recipe-hub-jaikishore-2005.vercel.app',
+      'https://recipe-hub-new.vercel.app'
+    ];
+    
+    // Allow requests with no origin (like mobile apps, curl, Postman)
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
 // Middleware
-app.use(cors({
-  origin: FRONTEND_URL,
-  credentials: true
-}));
+app.use(cors(corsOptions));
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
 
