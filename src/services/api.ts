@@ -38,8 +38,7 @@ async function fetchApi<T>(
       ...config.API_HEADERS,
       ...headers,
     },
-    // Changed from 'include' to 'same-origin' to avoid CORS issues
-    credentials: 'same-origin',
+    // Remove credentials since we're allowing all origins
     mode: 'cors',
   };
 
