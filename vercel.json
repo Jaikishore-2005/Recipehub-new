@@ -14,7 +14,7 @@
         "distDir": "dist",
         "skipCache": true,
         "zeroConfig": true,
-        "buildCommand": "echo 'Removing TestApiConnection reference'; sed -i '/TestApiConnection/d' ./src/App.tsx && npm run build"
+        "buildCommand": "npm run build"
       }
     }
   ],
