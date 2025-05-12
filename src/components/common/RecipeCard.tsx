@@ -23,14 +23,18 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
   const safeRecipe = {
     ...recipe,
     collaborators: Array.isArray(recipe.collaborators) ? recipe.collaborators : [],
-    tags: Array.isArray(recipe.tags) ? recipe.tags : []
+    tags: Array.isArray(recipe.tags) ? recipe.tags : [],
+    owner: recipe.owner || { id: 'unknown', name: 'Unknown' } // Provide default owner if missing
   };
 
-  const isOwner = currentUser?.id === safeRecipe.owner?.id;
+  const isOwner = currentUser?.id && safeRecipe.owner?.id && currentUser.id === safeRecipe.owner.id;
   const canEdit =
     hasPermission(safeRecipe, "edit_own") ||
     hasPermission(safeRecipe, "edit_if_invited");
   const canInvite = hasPermission(safeRecipe, "invite_collaborators");
+
+  // Helper to safely access owner name
+  const ownerName = safeRecipe.owner?.name || "Unknown";
 
   const handleDeleteClick = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -123,7 +127,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
         {/* Footer: Owner and Actions */}
         <div className="flex justify-between items-center mt-auto pt-2 border-t border-gray-200">
           <span className="text-xs font-medium text-gray-700">
-            By {safeRecipe.owner?.name || "Unknown"}
+            By {ownerName}
           </span>
 
           {/* Action Buttons */}

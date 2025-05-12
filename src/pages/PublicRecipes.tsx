@@ -10,7 +10,7 @@ const PublicRecipes = () => {
   
   // Get all unique tags across recipes
   const allTags = Array.from(
-    new Set(publicRecipes.flatMap(recipe => recipe.tags || []))
+    new Set(publicRecipes.flatMap(recipe => Array.isArray(recipe.tags) ? recipe.tags : []))
   ).sort();
   
   // Allowed tags for filtering
@@ -20,11 +20,14 @@ const PublicRecipes = () => {
   
   // Filter recipes by search query and selected tag
   const filteredRecipes = publicRecipes.filter(recipe => {
+    // Safety check for recipe properties
+    if (!recipe || !recipe.title || !recipe.description) return false;
+    
     const matchesSearch = !searchQuery ||
       recipe.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       recipe.description.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const matchesTag = !selectedTag || recipe.tags.includes(selectedTag);
+    const matchesTag = !selectedTag || (Array.isArray(recipe.tags) && recipe.tags.includes(selectedTag));
     
     return matchesSearch && matchesTag;
   });

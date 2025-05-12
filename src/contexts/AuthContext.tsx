@@ -70,6 +70,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Check permissions based on user role and recipe ownership
   const hasPermission = (recipe: any, permission: string) => {
     if (!currentUser) return false;
+    if (!recipe) return false;
     
     // Not logged in users can only view public recipes
     if (!isAuthenticated && permission === "view_public") return true;
@@ -82,13 +83,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Anyone logged in can create recipes
       if (permission === "create_recipe") return true;
       
+      // Ensure recipe and owner properties exist before checking
+      if (!recipe || !recipe.owner) return false;
+      
       // Check if user is the recipe owner
-      const isOwner = recipe && recipe.owner && recipe.owner.id === currentUser.id;
+      const isOwner = recipe.owner && currentUser.id && recipe.owner.id && recipe.owner.id === currentUser.id;
       
       // Check if user is a collaborator on this recipe
-      const isCollaborator = recipe && 
-        recipe.collaborators && 
-        recipe.collaborators.some((collab: any) => collab.id === currentUser.id);
+      const isCollaborator = 
+        Array.isArray(recipe.collaborators) && 
+        recipe.collaborators.some((collab: any) => collab && collab.id && collab.id === currentUser.id);
       
       // Owners can edit their own recipes and invite collaborators
       if (isOwner) {
