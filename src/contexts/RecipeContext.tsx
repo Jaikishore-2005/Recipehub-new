@@ -59,11 +59,27 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     try {
       setLoadingRecipes(true);
       const response = await api.recipes.getAll();
-      if (response.data) {
-        setRecipes(Array.isArray(response.data) ? response.data as Recipe[] : []);
+      console.log("API Response for all recipes:", response);
+      
+      if (response.data && typeof response.data === 'object' && 'recipes' in response.data && Array.isArray(response.data.recipes)) {
+        // If response follows the pattern { recipes: Recipe[] }
+        console.log("Setting recipes from recipes array:", response.data.recipes);
+        setRecipes(response.data.recipes as Recipe[]);
+      } else if (response.data && Array.isArray(response.data)) {
+        // If response is directly an array of recipes
+        console.log("Setting recipes from direct array:", response.data);
+        setRecipes(response.data as Recipe[]);
+      } else if (response.data) {
+        // Handle other response structures
+        console.log("Unknown response structure:", response.data);
+        setRecipes([]);
+      } else {
+        console.log("No data in response");
+        setRecipes([]);
       }
     } catch (error) {
       console.error("Error fetching recipes:", error);
+      setRecipes([]);
     } finally {
       setLoadingRecipes(false);
     }
@@ -74,11 +90,27 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     try {
       setLoadingRecipes(true);
       const response = await api.recipes.getPublic();
-      if (response.data) {
-        setRecipes(Array.isArray(response.data) ? response.data as Recipe[] : []);
+      console.log("API Response for public recipes:", response);
+      
+      if (response.data && typeof response.data === 'object' && 'recipes' in response.data && Array.isArray(response.data.recipes)) {
+        // If response follows the pattern { recipes: Recipe[] }
+        console.log("Setting public recipes from recipes array:", response.data.recipes);
+        setRecipes(response.data.recipes as Recipe[]);
+      } else if (response.data && Array.isArray(response.data)) {
+        // If response is directly an array of recipes
+        console.log("Setting public recipes from direct array:", response.data);
+        setRecipes(response.data as Recipe[]);
+      } else if (response.data) {
+        // Handle other response structures
+        console.log("Unknown response structure:", response.data);
+        setRecipes([]);
+      } else {
+        console.log("No data in response");
+        setRecipes([]);
       }
     } catch (error) {
       console.error("Error fetching public recipes:", error);
+      setRecipes([]);
     } finally {
       setLoadingRecipes(false);
     }

@@ -22,10 +22,17 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
   // Ensure recipe has expected properties or provide defaults
   const safeRecipe = {
     ...recipe,
+    title: recipe.title || 'Untitled Recipe',
+    description: recipe.description || 'No description available',
+    servings: recipe.servings || 0,
+    updatedAt: recipe.updatedAt || new Date().toISOString(),
     collaborators: Array.isArray(recipe.collaborators) ? recipe.collaborators : [],
     tags: Array.isArray(recipe.tags) ? recipe.tags : [],
     owner: recipe.owner || { id: 'unknown', name: 'Unknown' } // Provide default owner if missing
   };
+
+  // Add debug log to see what recipe data is being received
+  console.log('Recipe data in card:', recipe);
 
   const isOwner = currentUser?.id && safeRecipe.owner?.id && currentUser.id === safeRecipe.owner.id;
   const canEdit =
@@ -35,6 +42,16 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
 
   // Helper to safely access owner name
   const ownerName = safeRecipe.owner?.name || "Unknown";
+
+  // Helper function to safely format date
+  const formatDate = (dateString: string) => {
+    try {
+      return new Date(dateString).toLocaleDateString();
+    } catch (error) {
+      console.error("Invalid date:", dateString);
+      return "Invalid Date";
+    }
+  };
 
   const handleDeleteClick = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -114,11 +131,15 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
 
         {/* Meta info */}
         <div className="flex items-center gap-2 mb-3 text-xs text-gray-500">
-          <span className="flex items-center gap-1">
-            <Clock size={14} />
-            Updated {new Date(safeRecipe.updatedAt).toLocaleDateString()}
-          </span>
-          <span>•</span>
+          {safeRecipe.updatedAt && (
+            <>
+              <span className="flex items-center gap-1">
+                <Clock size={14} />
+                Updated {formatDate(safeRecipe.updatedAt)}
+              </span>
+              <span>•</span>
+            </>
+          )}
           <span>{safeRecipe.servings} servings</span>
         </div>
 
