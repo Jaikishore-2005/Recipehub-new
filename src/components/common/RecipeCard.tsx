@@ -22,7 +22,8 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
   // Ensure recipe has expected properties or provide defaults
   const safeRecipe = {
     ...recipe,
-    id: recipe.id || 'unknown-id', // Ensure we have an ID for navigation
+    // Use _id from API response or fall back to id, or provide default
+    id: (recipe as any)._id || recipe.id || 'unknown-id',
     title: recipe.title || 'Untitled Recipe',
     description: recipe.description || 'No description available',
     servings: recipe.servings || 0,
@@ -33,7 +34,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
   };
 
   // Add debug log to see what recipe data is being received
-  console.log('Recipe data in card:', recipe);
+  console.log('Recipe data in card with ID:', (recipe as any)._id || recipe.id, recipe);
 
   const isOwner = currentUser?.id && safeRecipe.owner?.id && currentUser.id === safeRecipe.owner.id;
   const canEdit =
@@ -94,7 +95,10 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
 
   // Handle card click to navigate to recipe detail
   const handleCardClick = () => {
-    navigate(`/recipes/${safeRecipe.id}`);
+    // Use _id (MongoDB) preferentially over id if available
+    const recipeId = (recipe as any)._id || safeRecipe.id;
+    console.log("Navigating to recipe with ID:", recipeId);
+    navigate(`/recipes/${recipeId}`);
   };
 
   return (
@@ -187,7 +191,8 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
                 title="Edit recipe"
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate(`/recipes/${safeRecipe.id}/edit`);
+                  const recipeId = (recipe as any)._id || safeRecipe.id;
+                  navigate(`/recipes/${recipeId}/edit`);
                 }}
               >
                 <Edit size={16} />
@@ -199,7 +204,8 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
                 title="Share recipe"
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate(`/recipes/${safeRecipe.id}/share`);
+                  const recipeId = (recipe as any)._id || safeRecipe.id;
+                  navigate(`/recipes/${recipeId}/share`);
                 }}
               >
                 <Share size={16} />

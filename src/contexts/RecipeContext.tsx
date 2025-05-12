@@ -230,7 +230,19 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   
   const getRecipeById = (id: string) => {
     if (!Array.isArray(recipes)) return undefined;
-    return recipes.find(recipe => recipe.id === id);
+    
+    // First try to find by standard id
+    let recipe = recipes.find(recipe => recipe.id === id);
+    
+    // If not found, try to find by MongoDB _id
+    if (!recipe) {
+      recipe = recipes.find(recipe => (recipe as any)._id === id);
+      if (recipe) {
+        console.log("Found recipe by _id:", recipe);
+      }
+    }
+    
+    return recipe;
   };
   
   const addCollaborator = async (recipeId: string, collaborator: Omit<Collaborator, "id">) => {

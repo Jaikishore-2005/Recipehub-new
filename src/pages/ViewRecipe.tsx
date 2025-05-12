@@ -23,7 +23,22 @@ const ViewRecipe = () => {
     if (recipeId) {
       try {
         setLoading(true);
-        const fetchedRecipe = getRecipeById(recipeId);
+        // Try to find the recipe by either id or _id
+        let fetchedRecipe = getRecipeById(recipeId);
+        
+        // If not found by id, see if it's coming from the _id in MongoDB
+        if (!fetchedRecipe) {
+          console.log("Trying to find recipe by _id...");
+          
+          // Look through all recipes to find one with matching _id
+          const allRecipes = useRecipes().recipes;
+          fetchedRecipe = allRecipes.find(r => (r as any)._id === recipeId);
+          
+          if (fetchedRecipe) {
+            console.log("Found recipe by _id:", fetchedRecipe);
+          }
+        }
+        
         console.log("Fetched recipe:", fetchedRecipe);
         
         if (fetchedRecipe) {
