@@ -220,83 +220,88 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
             By {ownerName}
           </span>
 
-          {/* Action Buttons */}
-          <div
-            className="flex gap-2 action-buttons"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {showActions && canEdit && (
-              <button
-                className="p-2 rounded hover:bg-gray-100 transition"
-                title={isOwner ? "Edit recipe" : "Edit as collaborator"}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const recipeId = (recipe as any)._id || safeRecipe.id;
-                  navigate(`/recipes/${recipeId}/edit`);
-                }}
-              >
-                <Edit size={16} className={isCollaborator && !isOwner ? "text-blue-500" : ""} />
-              </button>
-            )}
-            {showActions && canShare && (
-              <button
-                className="p-2 rounded hover:bg-gray-100 transition"
-                title={isOwner ? "Share recipe" : "Share as collaborator"}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const recipeId = (recipe as any)._id || safeRecipe.id;
-                  navigate(`/recipes/${recipeId}/share`);
-                }}
-              >
-                <Share size={16} className={isCollaborator && !isOwner ? "text-blue-500" : ""} />
-              </button>
-            )}
-            {showActions && canDelete && (
-              <div className="relative">
-                <button
-                  className="p-2 rounded hover:bg-gray-100 transition"
-                  title="More options"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setShowDropdown(!showDropdown);
-                  }}
-                >
-                  <MoreVertical size={16} />
-                </button>
-                
-                {showDropdown && (
-                  <div className="absolute right-0 bottom-full mb-1 bg-white shadow-lg rounded-md border border-gray-200 py-1 z-10 w-48">
-                    {isOwner && (
-                      <button
-                        className="w-full px-3 py-2 text-sm text-left text-blue-600 hover:bg-gray-100 flex items-center gap-2"
-                        onClick={handleManageCollaboratorsClick}
-                      >
-                        <Users size={14} />
-                        Manage Collaborators
-                      </button>
-                    )}
-                    {isOwner && (
-                      <button
-                        className="w-full px-3 py-2 text-sm text-left text-red-600 hover:bg-gray-100 flex items-center gap-2"
-                        onClick={handleDeleteClick}
-                      >
-                        <Trash2 size={14} />
-                        Delete
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
+          {/* Action Buttons and Status */}
+          <div className="flex items-center">
+            {/* Collaborator status badge - show before the action buttons */}
             {isCollaborator && !isOwner && (
               <span 
-                className="text-xs text-blue-500 italic my-auto" 
+                className="text-xs text-blue-500 bg-blue-50 px-2 py-1 rounded-full mr-2" 
                 title="You are a collaborator on this recipe"
               >
                 Collaborator
               </span>
             )}
+            
+            {/* Action buttons */}
+            <div
+              className="flex gap-1 action-buttons"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {showActions && canEdit && (
+                <button
+                  className="p-2 rounded hover:bg-gray-100 transition"
+                  title={isOwner ? "Edit recipe" : "Edit as collaborator"}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const recipeId = (recipe as any)._id || safeRecipe.id;
+                    navigate(`/recipes/${recipeId}/edit`);
+                  }}
+                >
+                  <Edit size={16} className={isCollaborator && !isOwner ? "text-blue-500" : ""} />
+                </button>
+              )}
+              {showActions && canShare && (
+                <button
+                  className="p-2 rounded hover:bg-gray-100 transition"
+                  title={isOwner ? "Share recipe" : "Share as collaborator"}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const recipeId = (recipe as any)._id || safeRecipe.id;
+                    navigate(`/recipes/${recipeId}/share`);
+                  }}
+                >
+                  <Share size={16} className={isCollaborator && !isOwner ? "text-blue-500" : ""} />
+                </button>
+              )}
+              {showActions && canDelete && (
+                <div className="relative">
+                  <button
+                    className="p-2 rounded hover:bg-gray-100 transition"
+                    title="More options"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setShowDropdown(!showDropdown);
+                    }}
+                  >
+                    <MoreVertical size={16} />
+                  </button>
+                  
+                  {showDropdown && (
+                    <div className="absolute right-0 bottom-full mb-1 bg-white shadow-lg rounded-md border border-gray-200 py-1 z-10 w-48">
+                      {isOwner && (
+                        <button
+                          className="w-full px-3 py-2 text-sm text-left text-blue-600 hover:bg-gray-100 flex items-center gap-2"
+                          onClick={handleManageCollaboratorsClick}
+                        >
+                          <Users size={14} />
+                          Manage Collaborators
+                        </button>
+                      )}
+                      {isOwner && (
+                        <button
+                          className="w-full px-3 py-2 text-sm text-left text-red-600 hover:bg-gray-100 flex items-center gap-2"
+                          onClick={handleDeleteClick}
+                        >
+                          <Trash2 size={14} />
+                          Delete
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
