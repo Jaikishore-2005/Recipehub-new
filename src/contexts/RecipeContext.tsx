@@ -169,7 +169,14 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       console.log("Updating recipe with ID:", recipeId);
       console.log("Update recipe data:", updatedRecipe);
       
-      const response = await api.recipes.update(recipeId, updatedRecipe);
+      // Ensure we have both id forms in the data we send
+      const recipeDataToSend = {
+        ...updatedRecipe,
+        _id: (updatedRecipe as any)._id || updatedRecipe.id,
+        id: updatedRecipe.id || (updatedRecipe as any)._id
+      };
+      
+      const response = await api.recipes.update(recipeId, recipeDataToSend);
       
       if (response.data) {
         console.log("API response for update:", response.data);

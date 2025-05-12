@@ -139,10 +139,25 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
 
   // Drag and drop handler for steps
   const handleDragEnd = (result: DropResult) => {
-    if (!result.destination) return;
+    console.log("Drag end result:", result);
+    
+    if (!result.destination) {
+      console.log("No destination, skipping reorder");
+      return;
+    }
+    
+    if (result.source.index === result.destination.index) {
+      console.log("Same position, no reordering needed");
+      return;
+    }
+    
+    console.log(`Moving step from position ${result.source.index} to ${result.destination.index}`);
+    
     const reordered = Array.from(recipe.steps || []);
     const [removed] = reordered.splice(result.source.index, 1);
     reordered.splice(result.destination.index, 0, removed);
+    
+    console.log("New step order:", reordered);
     setRecipe({ ...recipe, steps: reordered });
   };
 
@@ -152,7 +167,8 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
     // Add MongoDB _id if it exists in the initialRecipe
     const recipeToSubmit = {
       ...recipe,
-      _id: (initialRecipe as any)?._id
+      _id: (initialRecipe as any)?._id,
+      id: initialRecipe.id || (initialRecipe as any)?._id
     };
     
     console.log("Submitting recipe form with data:", recipeToSubmit);
@@ -352,6 +368,9 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
           </div>
         ) : (
           <DragDropContext onDragEnd={handleDragEnd}>
+            <p className="text-sm text-muted-foreground mb-3 italic">
+              Drag steps to change their order
+            </p>
             <Droppable droppableId="steps-droppable">
               {(provided) => (
                 <div
@@ -366,7 +385,13 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
                           ref={provided.innerRef}
                           {...provided.draggableProps}
                           {...provided.dragHandleProps}
-                          className={`flex gap-4 bg-muted/50 rounded p-3 items-center ${snapshot.isDragging ? 'ring-2 ring-primary' : ''}`}
+                          className={`flex gap-4 bg-muted/50 rounded p-3 items-center 
+                            ${snapshot.isDragging ? 'ring-2 ring-primary shadow-lg bg-primary/10' : ''} 
+                            cursor-move hover:border hover:border-primary transition-all`}
+                          style={{
+                            ...provided.draggableProps.style,
+                            ...(snapshot.isDragging ? { zIndex: 9999 } : {})
+                          }}
                         >
                           <div className="flex-shrink-0 h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm">
                             {index + 1}
@@ -382,7 +407,10 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
                           </div>
                           <button
                             type="button"
-                            onClick={() => handleRemoveStep(step.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveStep(step.id);
+                            }}
                             className="flex-shrink-0"
                           >
                             <X size={16} className="text-muted-foreground hover:text-destructive" />
