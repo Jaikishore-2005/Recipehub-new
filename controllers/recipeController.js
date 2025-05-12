@@ -114,6 +114,7 @@ exports.getRecipeById = async (req, res) => {
  */
 exports.createRecipe = async (req, res) => {
   try {
+    console.log('Creating new recipe in database...');
     const recipeData = req.body;
     
     // Validate required fields
@@ -130,7 +131,14 @@ exports.createRecipe = async (req, res) => {
       name: req.user.name
     };
     
+    console.log(`Creating recipe "${recipeData.title}" for user ${req.user.name} (${req.user.id})`);
+    
+    // Ensure it goes to the recipes collection in test database
     const newRecipe = await Recipe.create(recipeData);
+    
+    console.log(`Recipe created successfully with ID: ${newRecipe._id}`);
+    console.log(`Saved to collection: recipes`);
+    
     res.status(201).json({
       message: 'Recipe created successfully',
       recipe: newRecipe

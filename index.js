@@ -10,6 +10,10 @@ const connectDB = require('./config/db');
 // Load environment variables
 dotenv.config();
 
+// Set MongoDB URI explicitly to test database if not provided in environment variables
+process.env.MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/test';
+console.log(`MongoDB URI: ${process.env.MONGO_URI}`);
+
 // Connect to MongoDB
 connectDB();
 

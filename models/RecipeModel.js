@@ -71,7 +71,8 @@ const recipeSchema = new mongoose.Schema(
     collaborators: [collaboratorSchema]
   },
   {
-    timestamps: true
+    timestamps: true,
+    collection: 'recipes'
   }
 );
 
@@ -80,6 +81,8 @@ recipeSchema.index({ 'owner.id': 1 });
 recipeSchema.index({ isPublic: 1 });
 recipeSchema.index({ 'collaborators.user': 1 });
 
-const Recipe = mongoose.model('Recipe', recipeSchema);
+const Recipe = mongoose.model('Recipe', recipeSchema, 'recipes');
+
+console.log('Recipe model created with recipes collection');
 
 module.exports = Recipe; 
