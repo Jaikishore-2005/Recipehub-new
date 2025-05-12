@@ -23,6 +23,7 @@ const Recipe = require('./models/RecipeModel');
 // Import routes
 const recipeRoutes = require('./routes/recipeRoutes');
 const userRoutes = require('./routes/userRoutes');
+const collaboratorRoutes = require('./routes/collaboratorRoutes');
 
 // Import seed data for development
 const { seedData } = require('./data/seed');
@@ -166,6 +167,7 @@ app.get('/api', (req, res) => {
 // API routes
 app.use('/api/recipes', recipeRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/collaborators', collaboratorRoutes);
 
 // 404 handler
 app.use((req, res, next) => {
