@@ -42,7 +42,7 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
     ingredients: [],
     steps: [],
     tags: [],
-    isPublic: false,
+    isPublic: true,
     ...initialRecipe
   });
 

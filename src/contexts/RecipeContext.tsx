@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import { Recipe, Ingredient, Step, Collaborator } from "../types";
 import { useAuth } from "../contexts/AuthContext";
+import api from "../services/api";
 
 // Initialize with empty array instead of mock data
 const initialRecipes: Recipe[] = [];
@@ -10,12 +11,14 @@ interface RecipeContextType {
   userRecipes: Recipe[];
   sharedRecipes: Recipe[];
   publicRecipes: Recipe[];
-  createRecipe: (recipe: Omit<Recipe, "id" | "createdAt" | "updatedAt">) => void;
-  updateRecipe: (recipe: Recipe) => void;
-  deleteRecipe: (id: string) => void;
+  loadingRecipes: boolean;
+  createRecipe: (recipe: Omit<Recipe, "id" | "createdAt" | "updatedAt">) => Promise<Recipe | void>;
+  updateRecipe: (recipe: Recipe) => Promise<Recipe | void>;
+  deleteRecipe: (id: string) => Promise<void>;
   getRecipeById: (id: string) => Recipe | undefined;
-  addCollaborator: (recipeId: string, collaborator: Omit<Collaborator, "id">) => void;
-  removeCollaborator: (recipeId: string, collaboratorId: string) => void;
+  addCollaborator: (recipeId: string, collaborator: Omit<Collaborator, "id">) => Promise<void>;
+  removeCollaborator: (recipeId: string, collaboratorId: string) => Promise<void>;
+  fetchAllRecipes: () => Promise<void>;
 }
 
 const RecipeContext = createContext<RecipeContextType>({
@@ -23,20 +26,63 @@ const RecipeContext = createContext<RecipeContextType>({
   userRecipes: [],
   sharedRecipes: [],
   publicRecipes: [],
-  createRecipe: () => {},
-  updateRecipe: () => {},
-  deleteRecipe: () => {},
+  loadingRecipes: false,
+  createRecipe: async () => {},
+  updateRecipe: async () => {},
+  deleteRecipe: async () => {},
   getRecipeById: () => undefined,
-  addCollaborator: () => {},
-  removeCollaborator: () => {},
+  addCollaborator: async () => {},
+  removeCollaborator: async () => {},
+  fetchAllRecipes: async () => {},
 });
 
 export const useRecipes = () => useContext(RecipeContext);
 
 export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [recipes, setRecipes] = useState<Recipe[]>(initialRecipes);
+  const [loadingRecipes, setLoadingRecipes] = useState(false);
   
-  const { currentUser } = useAuth();
+  const { currentUser, isAuthenticated } = useAuth();
+  
+  // Fetch recipes when user authentication changes
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchAllRecipes();
+    } else {
+      // Only load public recipes if not authenticated
+      fetchPublicRecipes();
+    }
+  }, [isAuthenticated]);
+  
+  // Fetch all recipes from API
+  const fetchAllRecipes = async () => {
+    try {
+      setLoadingRecipes(true);
+      const response = await api.recipes.getAll();
+      if (response.data) {
+        setRecipes(response.data as Recipe[]);
+      }
+    } catch (error) {
+      console.error("Error fetching recipes:", error);
+    } finally {
+      setLoadingRecipes(false);
+    }
+  };
+  
+  // Fetch only public recipes from API
+  const fetchPublicRecipes = async () => {
+    try {
+      setLoadingRecipes(true);
+      const response = await api.recipes.getPublic();
+      if (response.data) {
+        setRecipes(response.data as Recipe[]);
+      }
+    } catch (error) {
+      console.error("Error fetching public recipes:", error);
+    } finally {
+      setLoadingRecipes(false);
+    }
+  };
   
   // Get recipes created by the current user
   const userRecipes = recipes.filter(
@@ -53,74 +99,116 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // Get all public recipes
   const publicRecipes = recipes.filter(recipe => recipe.isPublic);
   
-  const createRecipe = (recipe: Omit<Recipe, "id" | "createdAt" | "updatedAt">) => {
+  const createRecipe = async (recipe: Omit<Recipe, "id" | "createdAt" | "updatedAt">) => {
     if (!currentUser) return;
     
-    const newRecipe: Recipe = {
-      ...recipe,
-      id: `recipe-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      owner: {
-        id: currentUser.id,
-        name: currentUser.name
-      },
-      collaborators: []
-    };
-    
-    setRecipes(prev => [...prev, newRecipe]);
+    try {
+      const response = await api.recipes.create(recipe);
+      
+      if (response.data) {
+        // If API call successful, update local state
+        setRecipes(prev => [...prev, response.data as Recipe]);
+        return response.data as Recipe;
+      } else if (response.error) {
+        throw new Error(response.error);
+      }
+    } catch (error) {
+      console.error("Error creating recipe:", error);
+      throw error;
+    }
   };
   
-  const updateRecipe = (updatedRecipe: Recipe) => {
-    setRecipes(prev => 
-      prev.map(recipe => 
-        recipe.id === updatedRecipe.id 
-          ? { 
-              ...updatedRecipe, 
-              updatedAt: new Date().toISOString() 
-            } 
-          : recipe
-      )
-    );
+  const updateRecipe = async (updatedRecipe: Recipe) => {
+    try {
+      const response = await api.recipes.update(updatedRecipe.id, updatedRecipe);
+      
+      if (response.data) {
+        // If API call successful, update local state
+        setRecipes(prev => 
+          prev.map(recipe => 
+            recipe.id === updatedRecipe.id ? response.data as Recipe : recipe
+          )
+        );
+        return response.data as Recipe;
+      } else if (response.error) {
+        throw new Error(response.error);
+      }
+    } catch (error) {
+      console.error("Error updating recipe:", error);
+      throw error;
+    }
   };
   
-  const deleteRecipe = (id: string) => {
-    setRecipes(prev => prev.filter(recipe => recipe.id !== id));
+  const deleteRecipe = async (id: string) => {
+    try {
+      const response = await api.recipes.delete(id);
+      
+      if (response.data || !response.error) {
+        // If API call successful, update local state
+        setRecipes(prev => prev.filter(recipe => recipe.id !== id));
+      } else if (response.error) {
+        throw new Error(response.error);
+      }
+    } catch (error) {
+      console.error("Error deleting recipe:", error);
+      throw error;
+    }
   };
   
   const getRecipeById = (id: string) => {
     return recipes.find(recipe => recipe.id === id);
   };
   
-  const addCollaborator = (recipeId: string, collaborator: Omit<Collaborator, "id">) => {
-    setRecipes(prev => 
-      prev.map(recipe => {
-        if (recipe.id === recipeId) {
-          return {
-            ...recipe,
-            collaborators: [
-              ...recipe.collaborators,
-              { ...collaborator, id: `user-${Date.now()}` }
-            ]
-          };
-        }
-        return recipe;
-      })
-    );
+  const addCollaborator = async (recipeId: string, collaborator: Omit<Collaborator, "id">) => {
+    try {
+      // Assuming your API has an endpoint for adding collaborators
+      const response = await api.recipes.update(recipeId, { 
+        collaboratorToAdd: collaborator 
+      });
+      
+      if (response.data) {
+        // If API call successful, update local state
+        setRecipes(prev => 
+          prev.map(recipe => {
+            if (recipe.id === recipeId) {
+              return response.data as Recipe;
+            }
+            return recipe;
+          })
+        );
+      } else if (response.error) {
+        throw new Error(response.error);
+      }
+    } catch (error) {
+      console.error("Error adding collaborator:", error);
+      throw error;
+    }
   };
   
-  const removeCollaborator = (recipeId: string, collaboratorId: string) => {
-    setRecipes(prev => 
-      prev.map(recipe => {
-        if (recipe.id === recipeId) {
-          return {
-            ...recipe,
-            collaborators: recipe.collaborators.filter(c => c.id !== collaboratorId)
-          };
-        }
-        return recipe;
-      })
-    );
+  const removeCollaborator = async (recipeId: string, collaboratorId: string) => {
+    try {
+      // Assuming your API has an endpoint for removing collaborators
+      const response = await api.recipes.update(recipeId, { 
+        collaboratorToRemove: collaboratorId 
+      });
+      
+      if (response.data) {
+        // If API call successful, update local state
+        setRecipes(prev => 
+          prev.map(recipe => {
+            if (recipe.id === recipeId) {
+              return response.data as Recipe;
+            }
+            return recipe;
+          })
+        );
+      } else if (response.error) {
+        throw new Error(response.error);
+      }
+    } catch (error) {
+      console.error("Error removing collaborator:", error);
+      throw error;
+    }
   };
   
   const value = {
@@ -128,12 +216,14 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     userRecipes,
     sharedRecipes,
     publicRecipes,
+    loadingRecipes,
     createRecipe,
     updateRecipe,
     deleteRecipe,
     getRecipeById,
     addCollaborator,
     removeCollaborator,
+    fetchAllRecipes,
   };
   
   return (
