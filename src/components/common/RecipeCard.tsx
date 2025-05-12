@@ -24,6 +24,8 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
     ...recipe,
     // Use _id from API response or fall back to id, or provide default
     id: (recipe as any)._id || recipe.id || 'unknown-id',
+    // Store MongoDB _id separately to ensure we're using the correct ID for operations
+    _id: (recipe as any)._id,
     title: recipe.title || 'Untitled Recipe',
     description: recipe.description || 'No description available',
     servings: recipe.servings || 0,
@@ -34,7 +36,11 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
   };
 
   // Add debug log to see what recipe data is being received
-  console.log('Recipe data in card with ID:', (recipe as any)._id || recipe.id, recipe);
+  console.log('Recipe data in card:', {
+    _id: (recipe as any)._id,
+    id: recipe.id,
+    title: recipe.title
+  });
 
   const isOwner = currentUser?.id && safeRecipe.owner?.id && currentUser.id === safeRecipe.owner.id;
   const canEdit =
@@ -61,7 +67,14 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
     
     if (window.confirm("Are you sure you want to delete this recipe? This action cannot be undone.")) {
       try {
-        console.log("Deleting recipe:", safeRecipe.id);
+        // Use MongoDB _id preferentially when available
+        const recipeIdToDelete = safeRecipe._id || safeRecipe.id;
+        console.log("Deleting recipe with ID:", recipeIdToDelete);
+        console.log("Recipe details:", {
+          title: safeRecipe.title,
+          _id: safeRecipe._id,
+          id: safeRecipe.id
+        });
         console.log("Owner check - Current user:", currentUser);
         console.log("Owner check - Recipe owner:", safeRecipe.owner);
         
@@ -71,7 +84,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
           return;
         }
         
-        await deleteRecipe(safeRecipe.id);
+        await deleteRecipe(recipeIdToDelete);
         // Success message
         alert("Recipe deleted successfully!");
       } catch (error) {

@@ -235,14 +235,31 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       console.log(`Attempting to delete recipe with ID: ${id}`);
       
       // Get the current recipe to check ownership
-      const recipeToDelete = getRecipeById(id);
+      let recipeToDelete = getRecipeById(id);
+      
+      // If not found by the provided id, try looking for it in the recipes list
+      // This helps when we have mismatches between MongoDB _id and regular id
+      if (!recipeToDelete && Array.isArray(recipes)) {
+        // Look for a recipe that has this ID as either id or _id
+        recipeToDelete = recipes.find(r => 
+          r.id === id || (r as any)._id === id
+        );
+      }
+      
       if (!recipeToDelete) {
         console.error("Cannot delete: Recipe not found in local state");
         throw new Error("Recipe not found");
       }
       
-      console.log("Recipe to delete:", recipeToDelete);
-      console.log("Current user:", currentUser);
+      console.log("Recipe to delete:", {
+        id: recipeToDelete.id,
+        _id: (recipeToDelete as any)._id,
+        title: recipeToDelete.title
+      });
+      console.log("Current user:", currentUser ? {
+        id: currentUser.id,
+        name: currentUser.name
+      } : null);
       
       // Check if owner information is properly set
       if (!recipeToDelete.owner || !recipeToDelete.owner.id) {
@@ -256,7 +273,7 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         throw new Error("Only the recipe owner can delete this recipe");
       }
       
-      // Convert MongoDB ObjectId to string if needed to ensure consistent comparison
+      // Always use MongoDB _id for API operations when available
       const recipeId = (recipeToDelete as any)._id || recipeToDelete.id;
       console.log(`Using ID for deletion: ${recipeId}`);
       
@@ -273,11 +290,15 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         }
       }
       
-      // If API call successful, update local state
+      // If API call successful, update local state by filtering by all possible ID forms
       setRecipes(prev => {
         if (!Array.isArray(prev)) return [];
         return prev.filter(recipe => {
-          return recipe.id !== id && (recipe as any)._id !== id;
+          // Keep the recipe if neither of these match the deleted recipe's ID
+          return recipe.id !== id && 
+                 recipe.id !== recipeId && 
+                 (recipe as any)._id !== id && 
+                 (recipe as any)._id !== recipeId;
         });
       });
     } catch (error) {
