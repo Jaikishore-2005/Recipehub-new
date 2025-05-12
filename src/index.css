@@ -1,0 +1,76 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 36 33% 98%;
+    --foreground: 30 6% 25%;
+
+    --card: 36 33% 100%;
+    --card-foreground: 30 6% 25%;
+
+    --popover: 36 33% 100%;
+    --popover-foreground: 30 6% 25%;
+
+    --primary: 146 36% 62%;
+    --primary-foreground: 146 36% 10%;
+
+    --secondary: 27 100% 87%;
+    --secondary-foreground: 27 46% 25%;
+
+    --muted: 36 33% 93%;
+    --muted-foreground: 30 6% 50%;
+
+    --accent: 27 100% 87%;
+    --accent-foreground: 27 46% 25%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 30 6% 90%;
+    --input: 30 6% 90%;
+    --ring: 146 36% 62%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 30 6% 25%;
+    --sidebar-primary: 146 36% 62%;
+    --sidebar-primary-foreground: 146 36% 10%;
+    --sidebar-accent: 27 100% 87%;
+    --sidebar-accent-foreground: 27 46% 25%;
+    --sidebar-border: 30 6% 90%;
+    --sidebar-ring: 146 36% 62%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
+  }
+}
+
+@layer utilities {
+  .recipe-card {
+    @apply bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow duration-200;
+  }
+
+  .recipe-tag {
+    @apply bg-recipe-mint text-primary-foreground text-xs px-2 py-1 rounded-full;
+  }
+
+  .btn-recipe-primary {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90 rounded-md px-4 py-2;
+  }
+
+  .btn-recipe-secondary {
+    @apply bg-secondary text-secondary-foreground hover:bg-secondary/90 rounded-md px-4 py-2;
+  }
+}
