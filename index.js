@@ -178,9 +178,14 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Server error', details: NODE_ENV === 'development' ? err.message : 'Internal server error' });
 });
 
-// Initialize data in development
+// Initialize data in development - DISABLED
 const initDevData = async () => {
-  if (NODE_ENV === 'development') {
+  console.log('⚠️ Development data seeding has been disabled');
+  console.log('⚠️ No initial recipes will be created');
+  return;
+  
+  // The following code is disabled
+  if (false && NODE_ENV === 'development') {
     try {
       await seedData();
       console.log('✅ Development data seeded successfully');
@@ -195,7 +200,7 @@ app.listen(PORT, async () => {
   console.log(`Server running in ${NODE_ENV} mode on port ${PORT}`);
   console.log(`API available at: http://localhost:${PORT}/api`);
   
-  // Seed data in development
+  // Seed data in development - DISABLED
   await initDevData();
   
   // Only show development info in development mode
