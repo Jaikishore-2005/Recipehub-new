@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { UserPlus } from "lucide-react";
+import api from "../services/api";
 
 const Signup = () => {
   const [name, setName] = useState("");
@@ -40,10 +40,24 @@ const Signup = () => {
     setError("");
     
     try {
-      // In a real app, you'd register the user here
-      // For demo, we'll just log them in
-      await login(email, password);
-      navigate("/");
+      // Call the signup API endpoint
+      const response = await api.auth.signup(name, email, password);
+      
+      if (response.error) {
+        setError(response.error);
+        return;
+      }
+      
+      if (response.data && response.data.token) {
+        // Store token and user data
+        localStorage.setItem("recipehub_token", response.data.token);
+        localStorage.setItem("recipehub_user", JSON.stringify(response.data.user));
+        
+        // Refresh auth context
+        window.location.href = "/";
+      } else {
+        setError("Registration successful but failed to get authentication data");
+      }
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);
